@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 
+@CrossOrigin(origins = "*") 
 @Validated
 @RestController
 @RequestMapping("api/v1/auth")
