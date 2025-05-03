@@ -20,8 +20,8 @@ public class User {
     private Long id;
 
 
-    @Column(name = "user_catalogue_id", updatable = false)
-    private String user_catalogue_id;
+    @Column(name = "user_catalogue_id")
+    private Long userCatalogueId;
 
     private String name;
     private String email;

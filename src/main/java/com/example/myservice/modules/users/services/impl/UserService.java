@@ -1,6 +1,7 @@
 package com.example.myservice.modules.users.services.impl;
 
 import com.example.myservice.modules.users.services.interfaces.UserServiceInterface;
+import com.example.myservice.resources.ErrorResource;
 import com.example.myservice.services.BaseService;
 import com.example.myservice.services.JwtService;
 import org.slf4j.LoggerFactory;
@@ -42,23 +43,23 @@ public class UserService extends BaseService implements UserServiceInterface {
             {
                 throw new BadCredentialsException("Email hoac mat khau khong dung");
             }
-            UserResource userResource = new UserResource(
-                    user.getId(),
-                    user.getEmail(),
-                    user.getName()
-            );
+            UserResource userResource = UserResource.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .name(user.getName())
+                    .phone(user.getPhone())
+                    .build();
             String token = jwtService.generateToken(user.getId(), user.getEmail());
             return new LoginResource(token, userResource);
 
         } catch (BadCredentialsException e)
         {
             logger.error("Loi xac thuc {}", e.getMessage());
+
             Map<String, String> error = new HashMap<>();
             error.put("message", e.getMessage());
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("message", "Co van de xay ra trong qua trinh xac thuc");
-            errorResponse.put("details", error);
-            return ResponseEntity.badRequest().body(errorResponse);
+            ErrorResource errorResource = new ErrorResource("Co van de trong qua trinh xac thuc", error);
+            return errorResource;
         }
     }
 

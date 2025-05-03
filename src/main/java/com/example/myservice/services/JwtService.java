@@ -3,6 +3,9 @@ package com.example.myservice.services;
 import java.security.Key;
 import java.util.Date;
 import java.util.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.example.myservice.config.JwtConfig;
 import io.jsonwebtoken.security.Keys;
@@ -12,13 +15,17 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.SignatureException;
 import io.jsonwebtoken.ExpiredJwtException;
+import com.example.myservice.modules.users.repositories.BlacklistedTokenRepository;
 
 @Service
 public class JwtService {
 
     private final JwtConfig jwtConfig;
     private final Key key;
+    private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
 
+    @Autowired
+    private BlacklistedTokenRepository blacklistedTokenRepository;
 
     private JwtService(
             JwtConfig jwtConfig
@@ -29,6 +36,7 @@ public class JwtService {
     }
 
     public String generateToken(Long userId, String email) {
+        logger.info("Generating...");
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtConfig.getExpirationTime());
 
@@ -76,19 +84,20 @@ public class JwtService {
 
     private Key getSigningKey() {
         byte[] keyBytes = jwtConfig.getSecretKey().getBytes();
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.hmacShaKeyFor(Base64.getEncoder().encode(keyBytes));
     }
 
     public boolean isTokenExpired(String token) {
         try {
+            Date now = new Date();
             final Date expiryDate = getClaimFromToken(token, Claims::getExpiration);
-            return expiryDate.before(new Date());
+            return expiryDate.after(now);
         } catch (ExpiredJwtException e) {
             return false;
         }
     }
 
-    private Claims getAllClaimsFromToken(String token) {
+    public Claims getAllClaimsFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
@@ -96,7 +105,7 @@ public class JwtService {
                 .getBody();
     }
 
-    private <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
+    public  <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = getAllClaimsFromToken(token);
         return claimsResolver.apply(claims);
     }
@@ -110,4 +119,8 @@ public class JwtService {
         Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
         return claims.get("email", String.class);
     }
+    public boolean isBlacklistedToken(String token) {
+        return blacklistedTokenRepository.existsByToken(token);
+    }
+
 }

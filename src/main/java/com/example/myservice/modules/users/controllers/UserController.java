@@ -1,6 +1,9 @@
 package com.example.myservice.modules.users.controllers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import com.example.myservice.modules.users.entities.User;
@@ -15,17 +18,21 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @RequestMapping("/me")
     public ResponseEntity<?> me() {
-        String email = "haixuan11598@gmail.com";
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        logger.info(email);
+
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
-        UserResource userResource = new UserResource(
-                user.getId(),
-                user.getEmail(),
-                user.getName()
-        );
+        UserResource userResource = UserResource.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .name(user.getName())
+                .phone(user.getPhone())
+                .build();
 
         SuccessResource<UserResource> respone = new SuccessResource<>("Succes", userResource);
 
