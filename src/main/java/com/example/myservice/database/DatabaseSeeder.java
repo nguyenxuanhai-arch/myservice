@@ -45,7 +45,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             user.setEmail("haixuan11598@gmail.com");
             user.setPassword(passString);
             user.setPhone("0123456789");
-            user.setUser_catalogue_id(String.valueOf(1L));
+            user.setUserCatalogueId(1L);
 
             userRepository.save(user);
             logger.info("User table seeded");
