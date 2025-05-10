@@ -50,7 +50,8 @@ public class UserService extends BaseService implements UserServiceInterface {
                     .phone(user.getPhone())
                     .build();
             String token = jwtService.generateToken(user.getId(), user.getEmail());
-            return new LoginResource(token, userResource);
+            String refreshToken = jwtService.generaterefreshToken(user.getId(), user.getEmail());
+            return new LoginResource(token,refreshToken, userResource);
 
         } catch (BadCredentialsException e)
         {

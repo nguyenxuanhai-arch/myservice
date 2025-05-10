@@ -1,6 +1,8 @@
 package com.example.myservice.services;
 
 import java.security.Key;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.Base64;
 import org.slf4j.Logger;
@@ -13,9 +15,9 @@ import java.util.function.Function;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.SignatureException;
-import io.jsonwebtoken.ExpiredJwtException;
 import com.example.myservice.modules.users.repositories.BlacklistedTokenRepository;
+import com.example.myservice.modules.users.entities.RefreshToken;
+import com.example.myservice.modules.users.repositories.RefreshTokenRepository;
 
 @Service
 public class JwtService {
@@ -26,6 +28,9 @@ public class JwtService {
 
     @Autowired
     private BlacklistedTokenRepository blacklistedTokenRepository;
+
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
 
     private JwtService(
             JwtConfig jwtConfig
@@ -48,6 +53,29 @@ public class JwtService {
                 .claim("email", email)
                 .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
+    }
+
+    public String generaterefreshToken(Long userId, String email) {
+        logger.info("Generating refresh token...");
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtConfig.getRefreshTokenExpirationTime());
+
+        String refreshToken = Jwts.builder()
+                .setSubject(userId.toString())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .setIssuer(jwtConfig.getIssuer())
+                .claim("email", email)
+                .signWith(key, SignatureAlgorithm.HS512)
+                .compact();
+        LocalDateTime localExpiryDate = expiryDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+
+        RefreshToken insertTolen = new RefreshToken();
+        insertTolen.setRefreshToken(refreshToken);
+        insertTolen.setUserId(userId);
+        insertTolen.setExpiryDate(localExpiryDate);
+        refreshTokenRepository.save(insertTolen);
+        return refreshToken;
     }
 
     public String getUserIdFromJwt(String token) {
@@ -77,7 +105,7 @@ public class JwtService {
         try {
             Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token);
             return true;
-        } catch (SignatureException e) {
+        } catch (Exception e) {
             return false;
         }
     }
@@ -88,13 +116,8 @@ public class JwtService {
     }
 
     public boolean isTokenExpired(String token) {
-        try {
-            Date now = new Date();
-            final Date expiryDate = getClaimFromToken(token, Claims::getExpiration);
-            return expiryDate.after(now);
-        } catch (ExpiredJwtException e) {
-            return false;
-        }
+        final Date expiryDate = getClaimFromToken(token, Claims::getExpiration);
+        return expiryDate.after(new Date());
     }
 
     public Claims getAllClaimsFromToken(String token) {
@@ -123,4 +146,16 @@ public class JwtService {
         return blacklistedTokenRepository.existsByToken(token);
     }
 
+    public boolean isRefreshTokenValid(String token) {
+        try {
+            Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token);
+            RefreshToken refreshToken = refreshTokenRepository.findByRefreshToken(token).orElseThrow(() -> new
+                    RuntimeException("Refresh khong ton tai"));
+            final Date expiryDate = getClaimFromToken(token, Claims::getExpiration);
+
+            return expiryDate.after(new Date());
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

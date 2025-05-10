@@ -12,6 +12,9 @@ public class JwtConfig {
     @Value("${jwt.expiration}")
     private long expirationTime;
 
+    @Value("${jwt.expirationRefreshToken}")
+    private long refreshTokenExpirationTime;
+
     @Value("${jwt.issuer}")
     private String issuer;
 
@@ -24,4 +27,8 @@ public class JwtConfig {
     }
 
     public String getIssuer() { return issuer; }
+
+    public long getRefreshTokenExpirationTime() {
+        return refreshTokenExpirationTime;
+    }
 }

@@ -19,7 +19,7 @@ public class BlacklistedToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "token", columnDefinition = "TEXT", nullable = false)
     private String token;
 
     @Column(name = "user_id")

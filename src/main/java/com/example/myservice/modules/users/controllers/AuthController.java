@@ -1,15 +1,12 @@
 package com.example.myservice.modules.users.controllers;
 
 
-import com.example.myservice.modules.users.entities.BlacklistedToken;
-import com.example.myservice.modules.users.repositories.BlacklistedTokenRepository;
 import com.example.myservice.modules.users.requests.LoginRequest;
+import com.example.myservice.modules.users.requests.RequestTokenRequest;
 import com.example.myservice.modules.users.resources.LoginResource;
+import com.example.myservice.modules.users.resources.TokenResource;
 import com.example.myservice.modules.users.services.interfaces.UserServiceInterface;
 import com.example.myservice.resources.ErrorResource;
-import com.example.myservice.services.JwtService;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +17,7 @@ import com.example.myservice.modules.users.requests.BlacklistTokenRequest;
 import com.example.myservice.modules.users.services.impl.BlacklistedService;
 import com.example.myservice.resources.MessageResource;
 
-import java.util.Date;
+import java.util.logging.Logger;
 
 
 @CrossOrigin(origins = "*")
@@ -32,6 +29,8 @@ public class AuthController {
 
     @Autowired
     private BlacklistedService blacklistedService;
+    
+    private final Logger logger = Logger.getLogger(AuthController.class.getName());
 
     public AuthController(UserServiceInterface userService) {
         this.userService = userService;
@@ -74,5 +73,12 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new MessageResource("NetworkError"));
         }
+    }
+
+    @PostMapping("refresh")
+    public ResponseEntity<?> refresh(@Valid @RequestBody RequestTokenRequest request) {
+        String refreshToken = request.getRefeshToken();
+        logger.info(refreshToken);
+        return ResponseEntity.ok("test");
     }
 }
