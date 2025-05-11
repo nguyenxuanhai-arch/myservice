@@ -1,12 +1,15 @@
 package com.example.myservice.modules.users.controllers;
 
-
+import com.example.myservice.modules.users.entities.RefreshToken;
+import com.example.myservice.modules.users.repositories.RefreshTokenRepository;
 import com.example.myservice.modules.users.requests.LoginRequest;
 import com.example.myservice.modules.users.requests.RequestTokenRequest;
 import com.example.myservice.modules.users.resources.LoginResource;
-import com.example.myservice.modules.users.resources.TokenResource;
+import com.example.myservice.modules.users.resources.RefreshTokenResource;
+import com.example.myservice.modules.users.services.impl.RefreshTokenService;
 import com.example.myservice.modules.users.services.interfaces.UserServiceInterface;
 import com.example.myservice.resources.ErrorResource;
+import com.example.myservice.services.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +20,7 @@ import com.example.myservice.modules.users.requests.BlacklistTokenRequest;
 import com.example.myservice.modules.users.services.impl.BlacklistedService;
 import com.example.myservice.resources.MessageResource;
 
+import java.util.Optional;
 import java.util.logging.Logger;
 
 
@@ -29,8 +33,14 @@ public class AuthController {
 
     @Autowired
     private BlacklistedService blacklistedService;
+
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
     
     private final Logger logger = Logger.getLogger(AuthController.class.getName());
+
+    @Autowired
+    private JwtService jwtService;
 
     public AuthController(UserServiceInterface userService) {
         this.userService = userService;
@@ -78,7 +88,22 @@ public class AuthController {
     @PostMapping("refresh")
     public ResponseEntity<?> refresh(@Valid @RequestBody RequestTokenRequest request) {
         String refreshToken = request.getRefeshToken();
-        logger.info(refreshToken);
-        return ResponseEntity.ok("test");
+        if (!jwtService.isRefreshTokenValid(refreshToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResource("Refresh Token khong hop le"));
+        }
+
+        Optional<RefreshToken> dbRefreshToken = refreshTokenRepository.findByRefreshToken(refreshToken);
+
+        if (dbRefreshToken.isPresent()) {
+            Long userId = dbRefreshToken.get().getUserId();
+            String email = dbRefreshToken.get().getUser().getEmail();
+
+            String newToken = jwtService.generateToken(userId, email);
+            String newRefreshToken =jwtService.generateRefreshToken(userId, email);
+
+            return ResponseEntity.ok(new RefreshTokenResource(newToken, newRefreshToken));
+        }
+
+        return ResponseEntity.internalServerError().body(new MessageResource("NetworkError"));
     }
 }

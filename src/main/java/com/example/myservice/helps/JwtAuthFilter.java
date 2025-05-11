@@ -20,6 +20,7 @@ import jakarta.servlet.ServletException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import io.jsonwebtoken.ExpiredJwtException; // Import ExpiredJwtException
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/api/v1/auth/login");
+        return path.startsWith("/api/v1/auth/login") || path.startsWith("/api/v1/auth/refresh");
     }
 
     @Override
@@ -49,37 +50,32 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
+        final String authHeader = request.getHeader("Authorization");
+        final String jwt;
+        final String userID;
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            sendErrorResponse(response,
+                    request,
+                    HttpServletResponse.SC_UNAUTHORIZED, // Changed to 401 as it's authentication error
+                    "Xac thuc khong thanh",
+                    "Khong tim thay token"
+            );
+            return;
+        }
+
+        jwt = authHeader.substring(7);
+
         try {
-            final String authHeader = request.getHeader("Authorization");
-            final String jwt;
-            final String userID;
-
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                sendErrorResponse(response,
-                        request,
-                        HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                        "Xac thuc khong thanh",
-                        "Khong tim thay token"
-                );
-//                filterChain.doFilter(request, response);
+            if (!jwtService.isTokenFormatValid(jwt)) {
+                sendErrorResponse(response, request, HttpServletResponse.SC_UNAUTHORIZED, "Xac thuc khong thanh", "Token khong dung dinh dang");
                 return;
             }
 
-            jwt = authHeader.substring(7);
-
-
-            if (!jwtService.isTokenFormatValid(jwt))
-            {
-                sendErrorResponse(response,
-                        request,
-                        HttpServletResponse.SC_UNAUTHORIZED,
-                        "Xac thuc khong thanh",
-                        "Token khong dung dinh dang");
-                return;
-            }
-
-            if (!jwtService.isIssureToken(jwt))
-            {
+            // Lưu ý: isIssureToken, isSignatureValid và isTokenExpired
+            // đều gọi đến getAllClaimsFromToken, có thể ném ExpiredJwtException.
+            // Do đó, việc đặt chúng trong khối try-catch lớn này là cần thiết.
+            if (!jwtService.isIssureToken(jwt)) {
                 sendErrorResponse(response,
                         request,
                         HttpServletResponse.SC_UNAUTHORIZED,
@@ -88,8 +84,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 return;
             }
 
-            if (!jwtService.isSignatureValid(jwt))
-            {
+            if (!jwtService.isSignatureValid(jwt)) {
                 sendErrorResponse(response,
                         request,
                         HttpServletResponse.SC_UNAUTHORIZED,
@@ -98,8 +93,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 return;
             }
 
-            if (!jwtService.isTokenExpired(jwt))
-            {
+            // `isTokenExpired` có khối catch riêng để xử lý ExpiredJwtException
+            // nhưng việc ném lại từ `getAllClaimsFromToken` sẽ bắt được ở đây.
+            if (jwtService.isTokenExpired(jwt)) {
                 sendErrorResponse(response,
                         request,
                         HttpServletResponse.SC_UNAUTHORIZED,
@@ -117,11 +113,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 return;
             }
 
-            userID = jwtService.getUserIdFromJwt(jwt);
+            userID = jwtService.getUserIdFromJwt(jwt); // Cũng có thể ném ExpiredJwtException
             if (userID != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(userID);
 
-                final String emailFromToken = jwtService.getEmailFromToken(jwt);
+                final String emailFromToken = jwtService.getEmailFromToken(jwt); // Cũng có thể ném ExpiredJwtException
                 if (!emailFromToken.equals(userDetails.getUsername())) {
                     sendErrorResponse(response,
                             request,
@@ -131,24 +127,46 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     return;
                 }
 
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
 
-
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                    userDetails,
-                    null,
-                    userDetails.getAuthorities()
-            );
-            authToken.setDetails(
-                    new WebAuthenticationDetailsSource().buildDetails(request)
-            );
-
-            SecurityContextHolder.getContext().setAuthentication(authToken);
-            logger.info("Xac thuc tai khoan thanh cong!" + userDetails.getUsername());
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+                logger.info("Xac thuc tai khoan thanh cong!" + userDetails.getUsername());
             }
 
             filterChain.doFilter(request, response);
 
+        } catch (ExpiredJwtException e) {
+            // Bắt ExpiredJwtException cụ thể ở đây
+            logger.warn("Token đã hết hạn: {}", e.getMessage());
+            sendErrorResponse(response,
+                    request,
+                    HttpServletResponse.SC_UNAUTHORIZED, // 401 Unauthorized
+                    "Xac thuc khong thanh",
+                    "Token da het han");
+            return;
+        } catch (RuntimeException e) { // Bắt các RuntimeException khác từ JwtService
+            // Phân loại các loại lỗi RuntimeException cụ thể hơn nếu cần
+            if (e.getMessage() != null && e.getMessage().contains("Chữ ký token không hợp lệ")) {
+                sendErrorResponse(response, request, HttpServletResponse.SC_UNAUTHORIZED, "Xac thuc khong thanh", "Chu ki khong hop le");
+            } else if (e.getMessage() != null && e.getMessage().contains("Token không đúng định dạng")) {
+                sendErrorResponse(response, request, HttpServletResponse.SC_UNAUTHORIZED, "Xac thuc khong thanh", "Token khong dung dinh dang");
+            }
+            // Có thể thêm các điều kiện else if cho các loại RuntimeException khác mà bạn đã ném
+            else {
+                logger.error("Lỗi xử lý token không xác định: {}", e.getMessage(), e);
+                sendErrorResponse(response, request, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Lỗi xử lý token", "Đã xảy ra lỗi không mong muốn khi xử lý token.");
+            }
+            return;
         } catch (ServletException | IOException e) {
+            // Khối catch hiện có cho ServletException/IOException
+            logger.error("Lỗi mạng hoặc Servlet trong filter: {}", e.getMessage(), e);
             sendErrorResponse(response,
                     request,
                     HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
@@ -157,8 +175,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             );
             return;
         }
-
-
     }
 
     private void sendErrorResponse(
@@ -182,6 +198,5 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String jsonRespone = objectMapper.writeValueAsString(errorRespone);
 
         response.getWriter().write(jsonRespone);
-
     }
 }

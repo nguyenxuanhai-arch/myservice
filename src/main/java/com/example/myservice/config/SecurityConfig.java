@@ -29,14 +29,9 @@ public class SecurityConfig {
                 .authorizeRequests(auth -> auth
                         .requestMatchers(
                                 //Routers AUTH - No JWT
-                                "/api/v1/auth/login"
+                                "/api/v1/auth/login",
+                                "api/v1/auth/refresh"
                         ).permitAll()
-
-                        //Routers PUBLIC
-                        .requestMatchers(
-                                "api/v1/vaccines"
-                        ).permitAll()
-
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

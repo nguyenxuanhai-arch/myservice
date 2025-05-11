@@ -17,7 +17,7 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "refresh_token",columnDefinition = "TEXT", nullable = false, unique = true)
+    @Column(name = "refresh_token", columnDefinition = "TEXT", nullable = false, unique = true, length = 500) // Dòng này phải có 'length = 500'
     private String refreshToken;
 
     @Column(name = "expiry_date", nullable = false)
@@ -34,4 +34,7 @@ public class RefreshToken {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @OneToOne
+    @JoinColumn(name ="user_id", referencedColumnName = "id", insertable = false, updatable = false)
+    private User user;
 }
