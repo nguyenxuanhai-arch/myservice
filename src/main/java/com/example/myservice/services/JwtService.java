@@ -113,14 +113,9 @@ public class JwtService {
             Date expiration = getClaimFromToken(token, Claims::getExpiration);
             return expiration.before(new Date());
         } catch (ExpiredJwtException e) {
-            // Nếu ExpiredJwtException được ném lên từ getAllClaimsFromToken/getClaimFromToken
-            // thì chắc chắn là token đã hết hạn.
             return true;
         } catch (RuntimeException e) {
-            // Bắt các RuntimeException khác (như "Chữ ký token không hợp lệ", "Token không đúng định dạng")
-            // từ getAllClaimsFromToken và coi chúng là token không hợp lệ.
-            logger.warn("Token không hợp lệ (không phải do hết hạn): {}", e.getMessage());
-            return true; // Trả về true để coi token không hợp lệ
+            return true;
         }
     }
 
@@ -132,18 +127,14 @@ public class JwtService {
                     .parseClaimsJws(token)
                     .getBody();
         } catch (ExpiredJwtException e) {
-            // Ném lại chính ExpiredJwtException
             throw e;
         } catch (io.jsonwebtoken.security.SignatureException e) {
-            // Bắt lỗi chữ ký không hợp lệ
             logger.error("Lỗi chữ ký token: {}", e.getMessage());
             throw new RuntimeException("Chữ ký token không hợp lệ", e);
         } catch (io.jsonwebtoken.MalformedJwtException e) {
-            // Bắt lỗi định dạng token không đúng
             logger.error("Lỗi định dạng token: {}", e.getMessage());
             throw new RuntimeException("Token không đúng định dạng", e);
         } catch (Exception e) {
-            // Bắt các lỗi chung khác
             logger.error("Lỗi khi phân tích token: {}", e.getMessage());
             throw new RuntimeException("Lỗi không xác định khi phân tích token", e);
         }
