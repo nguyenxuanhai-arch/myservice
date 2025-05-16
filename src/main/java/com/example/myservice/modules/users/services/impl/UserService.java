@@ -1,6 +1,7 @@
 package com.example.myservice.modules.users.services.impl;
 
 import com.example.myservice.modules.users.services.interfaces.UserServiceInterface;
+import com.example.myservice.resources.ApiResource;
 import com.example.myservice.resources.ErrorResource;
 import com.example.myservice.services.BaseService;
 import com.example.myservice.services.JwtService;
@@ -9,6 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,9 @@ public class UserService extends BaseService implements UserServiceInterface {
     @Autowired
     private UserRepository userRepository;
 
+    @Value("${jwt.defaultExpiration}")
+    private long defaultExpiration;
+
     @Override
     public Object authenticate(LoginRequest request) {
         try {
@@ -49,18 +55,14 @@ public class UserService extends BaseService implements UserServiceInterface {
                     .name(user.getName())
                     .phone(user.getPhone())
                     .build();
-            String token = jwtService.generateToken(user.getId(), user.getEmail());
+            String token = jwtService.generateToken(user.getId(), user.getEmail(), defaultExpiration);
             String refreshToken = jwtService.generateRefreshToken(user.getId(), user.getEmail());
             return new LoginResource(token, refreshToken, userResource);
 
         } catch (BadCredentialsException e)
         {
             logger.error("Loi xac thuc {}", e.getMessage());
-
-            Map<String, String> error = new HashMap<>();
-            error.put("message", e.getMessage());
-            ErrorResource errorResource = new ErrorResource("Co van de trong qua trinh xac thuc", error);
-            return errorResource;
+            return ApiResource.error("AUTH_ERROR", e.getMessage(), HttpStatus.UNAUTHORIZED);
         }
     }
 

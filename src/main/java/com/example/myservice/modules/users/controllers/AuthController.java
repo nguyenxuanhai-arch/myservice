@@ -6,7 +6,6 @@ import com.example.myservice.modules.users.requests.LoginRequest;
 import com.example.myservice.modules.users.requests.RequestTokenRequest;
 import com.example.myservice.modules.users.resources.LoginResource;
 import com.example.myservice.modules.users.resources.RefreshTokenResource;
-import com.example.myservice.modules.users.services.impl.RefreshTokenService;
 import com.example.myservice.modules.users.services.interfaces.UserServiceInterface;
 import com.example.myservice.resources.ErrorResource;
 import com.example.myservice.services.JwtService;
@@ -19,10 +18,9 @@ import org.springframework.validation.annotation.Validated;
 import com.example.myservice.modules.users.requests.BlacklistTokenRequest;
 import com.example.myservice.modules.users.services.impl.BlacklistedService;
 import com.example.myservice.resources.MessageResource;
-
 import java.util.Optional;
 import java.util.logging.Logger;
-
+import com.example.myservice.resources.ApiResource;
 
 @CrossOrigin(origins = "*")
 @Validated
@@ -49,12 +47,12 @@ public class AuthController {
     @PostMapping("login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         Object result = userService.authenticate(request);
-        if (result instanceof LoginResource) {
-            return ResponseEntity.ok((LoginResource) result);
-
+        if (result instanceof LoginResource loginResource) {
+            ApiResource<LoginResource> response = ApiResource.ok(loginResource, "SUCCESS");
+            return ResponseEntity.ok(response);
         }
 
-        if (result instanceof ErrorResource errorResource) {
+        if (result instanceof ApiResource errorResource) {
             return ResponseEntity.unprocessableEntity().body(errorResource);
         }
 
@@ -77,11 +75,24 @@ public class AuthController {
             String token = bearerToken.substring(7);
             BlacklistTokenRequest request = new BlacklistTokenRequest();
             request.setToken(token);
-            Object message = blacklistedService.create(request);
-            return ResponseEntity.ok(message);
+            blacklistedService.create(request);
+
+            ApiResource<Void> response = ApiResource.<Void>builder()
+                    .success(true)
+                    .message("Đăng xuất thành công")
+                    .status(HttpStatus.OK)
+                    .build();
+
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new MessageResource("NetworkError"));
+
+            ApiResource<Void> errorResponse = ApiResource.<Void>builder()
+                    .success(false)
+                    .message("NetworkError")
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
+            return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
 
@@ -98,7 +109,7 @@ public class AuthController {
             Long userId = dbRefreshToken.get().getUserId();
             String email = dbRefreshToken.get().getUser().getEmail();
 
-            String newToken = jwtService.generateToken(userId, email);
+            String newToken = jwtService.generateToken(userId, email, null);
             String newRefreshToken =jwtService.generateRefreshToken(userId, email);
 
             return ResponseEntity.ok(new RefreshTokenResource(newToken, newRefreshToken));

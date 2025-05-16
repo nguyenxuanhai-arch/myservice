@@ -1,11 +1,13 @@
 package com.example.myservice.modules.users.services.impl;
 
 import com.example.myservice.modules.users.entities.BlacklistedToken;
+import com.example.myservice.resources.ApiResource;
 import com.example.myservice.resources.MessageResource;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import com.example.myservice.modules.users.repositories.BlacklistedTokenRepository;
 import java.time.ZoneId;
@@ -28,7 +30,7 @@ public class BlacklistedService {
     public Object create(BlacklistTokenRequest request) {
        try {
             if (blacklistedTokenRepository.existsByToken(request.getToken())) {
-                return new MessageResource("Token da ton tai trong blacklist");
+                return ApiResource.error("TOKEN_ALREADY_EXISTS", "Token da ton tai trong blacklist", HttpStatus.BAD_REQUEST);
             }
            Claims claims = jwtService.getAllClaimsFromToken(request.getToken());
            Long userId = Long.valueOf(claims.getSubject());

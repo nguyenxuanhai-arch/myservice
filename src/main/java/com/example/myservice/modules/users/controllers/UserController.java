@@ -10,7 +10,7 @@ import com.example.myservice.modules.users.entities.User;
 import com.example.myservice.modules.users.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.example.myservice.modules.users.resources.UserResource;
-import com.example.myservice.resources.SuccessResource;
+import com.example.myservice.resources.ApiResource;
 
 @RestController
 @RequestMapping("api/v1")
@@ -34,8 +34,8 @@ public class UserController {
                 .phone(user.getPhone())
                 .build();
 
-        SuccessResource<UserResource> respone = new SuccessResource<>("Succes", userResource);
+        ApiResource<UserResource> response = ApiResource.ok(userResource, "SUCCESS");
 
-        return ResponseEntity.ok(respone);
+        return ResponseEntity.ok(response);
     }
 }
