@@ -12,8 +12,6 @@ import org.springframework.stereotype.Service;
 import com.example.myservice.modules.users.repositories.BlacklistedTokenRepository;
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import com.example.myservice.services.JwtService;
 import com.example.myservice.modules.users.requests.BlacklistTokenRequest;
 
