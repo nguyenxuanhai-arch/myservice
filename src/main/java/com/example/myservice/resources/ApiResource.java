@@ -3,8 +3,8 @@ package com.example.myservice.resources;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import org.springframework.http.HttpStatus;
-
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -15,6 +15,7 @@ public class ApiResource<T> {
     private HttpStatus status;
     private LocalDateTime timestamp;
     private ErrorResource error;
+    private Map<String, String> errors;
 
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -80,6 +81,11 @@ public class ApiResource<T> {
 
         public ApiResource<T> build() {
             return resource;
+        }
+
+        public Builder<T> errors(Map<String, String> errors) {
+            resource.errors = errors;
+            return this;
         }
     }
 

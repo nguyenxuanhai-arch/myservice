@@ -6,5 +6,5 @@ import lombok.Data;
 @Data
 public class RequestTokenRequest {
     @NotBlank(message = "RefeshToken khong duoc de trong")
-    private String refeshToken;
+    private String refreshToken;
 }

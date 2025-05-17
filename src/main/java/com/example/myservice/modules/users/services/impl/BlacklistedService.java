@@ -2,7 +2,6 @@ package com.example.myservice.modules.users.services.impl;
 
 import com.example.myservice.modules.users.entities.BlacklistedToken;
 import com.example.myservice.resources.ApiResource;
-import com.example.myservice.resources.MessageResource;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,10 +38,14 @@ public class BlacklistedService {
            blacklistedToken.setExpiryDate(expiryDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
            blacklistedTokenRepository.save(blacklistedToken);
            logger.info("Them token token vao blacklist thanh cong");
-           return new MessageResource("Them token token vao blacklist thanh cong");
+           return ApiResource.<Void>builder()
+                   .success(true)
+                   .message("Them token token vao blacklist thanh cong")
+                   .status(HttpStatus.OK)
+                   .build();
 
        } catch (Exception e) {
-            return new MessageResource("Network Error!" + e.getMessage());
+           return ApiResource.error("TOKEN_ALREADY_EXISTS", e.getMessage(), HttpStatus.BAD_REQUEST);
        }
     }
 }

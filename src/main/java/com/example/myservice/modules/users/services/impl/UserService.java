@@ -2,12 +2,9 @@ package com.example.myservice.modules.users.services.impl;
 
 import com.example.myservice.modules.users.services.interfaces.UserServiceInterface;
 import com.example.myservice.resources.ApiResource;
-import com.example.myservice.resources.ErrorResource;
 import com.example.myservice.services.BaseService;
 import com.example.myservice.services.JwtService;
 import org.slf4j.LoggerFactory;
-import java.util.HashMap;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.http.ResponseEntity;
 import com.example.myservice.modules.users.entities.User;
 import com.example.myservice.modules.users.requests.LoginRequest;
 import com.example.myservice.modules.users.resources.LoginResource;
@@ -61,10 +57,9 @@ public class UserService extends BaseService implements UserServiceInterface {
 
         } catch (BadCredentialsException e)
         {
-            logger.error("Loi xac thuc {}", e.getMessage());
             return ApiResource.error("AUTH_ERROR", e.getMessage(), HttpStatus.UNAUTHORIZED);
         }
     }
-
+    
 
 }

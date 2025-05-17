@@ -7,7 +7,6 @@ import com.example.myservice.modules.users.requests.RequestTokenRequest;
 import com.example.myservice.modules.users.resources.LoginResource;
 import com.example.myservice.modules.users.resources.RefreshTokenResource;
 import com.example.myservice.modules.users.services.interfaces.UserServiceInterface;
-import com.example.myservice.resources.ErrorResource;
 import com.example.myservice.services.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,7 +16,6 @@ import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 import com.example.myservice.modules.users.requests.BlacklistTokenRequest;
 import com.example.myservice.modules.users.services.impl.BlacklistedService;
-import com.example.myservice.resources.MessageResource;
 import java.util.Optional;
 import java.util.logging.Logger;
 import com.example.myservice.resources.ApiResource;
@@ -56,7 +54,7 @@ public class AuthController {
             return ResponseEntity.unprocessableEntity().body(errorResource);
         }
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("NetworkError");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Network Error");
     }
 
     @PostMapping("blacklisted_tokens")
@@ -65,7 +63,12 @@ public class AuthController {
             Object result = blacklistedService.create(request);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new MessageResource("NetworkError"));
+            ApiResource<Void> errorResponse = ApiResource.<Void>builder()
+                    .success(false)
+                    .message("NetworkError")
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
+            return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
 
@@ -89,7 +92,7 @@ public class AuthController {
 
             ApiResource<Void> errorResponse = ApiResource.<Void>builder()
                     .success(false)
-                    .message("NetworkError")
+                    .message("Network Error")
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .build();
             return ResponseEntity.internalServerError().body(errorResponse);
@@ -98,9 +101,15 @@ public class AuthController {
 
     @PostMapping("refresh")
     public ResponseEntity<?> refresh(@Valid @RequestBody RequestTokenRequest request) {
-        String refreshToken = request.getRefeshToken();
+        String refreshToken = request.getRefreshToken();
         if (!jwtService.isRefreshTokenValid(refreshToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResource("Refresh Token khong hop le"));
+            ApiResource<Void> errorResponse = ApiResource.<Void>builder()
+                    .success(false)
+                    .message("Refresh Token không hợp lệ")
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
+            return ResponseEntity.internalServerError().body(errorResponse);
+
         }
 
         Optional<RefreshToken> dbRefreshToken = refreshTokenRepository.findByRefreshToken(refreshToken);
@@ -115,6 +124,11 @@ public class AuthController {
             return ResponseEntity.ok(new RefreshTokenResource(newToken, newRefreshToken));
         }
 
-        return ResponseEntity.internalServerError().body(new MessageResource("NetworkError"));
+        ApiResource<Void> errorResponse = ApiResource.<Void>builder()
+                .success(false)
+                .message("Network Error")
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .build();
+        return ResponseEntity.internalServerError().body(errorResponse);
     }
 }
