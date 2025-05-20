@@ -19,6 +19,7 @@ import com.example.myservice.modules.users.services.impl.BlacklistedService;
 import java.util.Optional;
 import java.util.logging.Logger;
 import com.example.myservice.resources.ApiResource;
+import com.example.myservice.resources.ApiResource.ErrorResource;
 
 @CrossOrigin(origins = "*")
 @Validated
@@ -54,7 +55,7 @@ public class AuthController {
             return ResponseEntity.unprocessableEntity().body(errorResource);
         }
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Network Error");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResource("Network Error"));
     }
 
     @PostMapping("blacklisted_tokens")
