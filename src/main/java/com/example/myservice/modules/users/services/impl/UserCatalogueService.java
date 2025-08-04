@@ -7,7 +7,6 @@ import com.example.myservice.modules.users.requests.UserCatalogue.UpdateRequest;
 import com.example.myservice.modules.users.services.interfaces.UserCatalogueInterface;
 import com.example.myservice.services.BaseService;
 import jakarta.persistence.EntityNotFoundException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
-import com.example.myservice.cronjob.BlacklistTokenClean;
 import com.example.myservice.helps.FilterParameter;
 import java.util.Map;
+import com.example.myservice.specifications.BaseSpecification;
+import org.springframework.data.jpa.domain.Specification;
 
 @Service
 public class UserCatalogueService extends BaseService implements UserCatalogueInterface {
@@ -46,8 +45,13 @@ public class UserCatalogueService extends BaseService implements UserCatalogueIn
         logger.info("filterSimple: {}",filterSimple);
         logger.info("filterComple: {}" , filterComplex);
 
+       Specification<UserCatalogue> specification = Specification.where(
+            BaseSpecification.<UserCatalogue>keyword(keyword, "name"))
+               .and(BaseSpecification.<UserCatalogue>whereSpec(filterSimple)
+                       .and(BaseSpecification.<UserCatalogue>complexWhereSpec(filterComplex)));
+
         Pageable pageable = PageRequest.of(page - 1, perPage, sort);
-        return userCatalogueRepository.findAll(pageable);
+        return userCatalogueRepository.findAll(specification ,pageable);
     }
 
     @Override
