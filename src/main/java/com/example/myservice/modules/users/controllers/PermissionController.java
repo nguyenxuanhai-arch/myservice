@@ -72,4 +72,26 @@ public class PermissionController {
             );
         }
      }
+
+     @DeleteMapping("/permissions/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            permissionService.delete(id);
+            return ResponseEntity.status(HttpStatus.OK).body(
+                    ApiResource.builder()
+                            .status(HttpStatus.OK)
+                            .message("Xoá thành công quyền người dùng với id" + id)
+                            .success(true)
+                            .build()
+            );
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ApiResource.error("NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND)
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    ApiResource.error("INTERNAL_SERVER_ERROR", "Có lỗi xảy ra trong quá trình cập nhật", HttpStatus.INTERNAL_SERVER_ERROR)
+            );
+        }
+     }
 }

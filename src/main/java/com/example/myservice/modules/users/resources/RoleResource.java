@@ -1,15 +1,17 @@
 package com.example.myservice.modules.users.resources;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
+import java.util.Set;
 
 @Data
 @Builder
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RoleResource {
-    private final Long id;
-    private final String name;
-    private final Integer publish;
+    private Long id;
+    private String name;
+    private Integer priority;
+    private Set<PermissionResource> permissions;
 }

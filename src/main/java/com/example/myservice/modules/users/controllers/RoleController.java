@@ -26,22 +26,22 @@ import java.util.Map;
 public class RoleController {
 
     private static final Logger logger = LoggerFactory.getLogger(RoleController.class);
-    private final RoleServiceInterface userCatalogueService;
+    private final RoleServiceInterface roleService;
     public RoleController(RoleServiceInterface roleServiceInterface) {
-        this.userCatalogueService = roleServiceInterface;
+        this.roleService = roleServiceInterface;
     }
 
     @GetMapping("/roles")
     public ResponseEntity<?> index(HttpServletRequest request)
     {
         Map<String, String[]> parameters = request.getParameterMap();
-        Page<Role> userCatalogues = userCatalogueService.paginate(parameters);
+        Page<Role> userCatalogues = roleService.paginate(parameters);
 
         Page<RoleResource> userCatalogueResource = userCatalogues.map(role ->
                 RoleResource.builder()
                         .id(role.getId())
                         .name(role.getName())
-                        .publish(role.getPublish())
+                        .priority(role.getPriority())
                         .build()
         );
         ApiResource<Page<RoleResource>> response = ApiResource.ok(userCatalogueResource,
@@ -52,12 +52,12 @@ public class RoleController {
     @PostMapping("/roles")
     public ResponseEntity<?> store(@Valid @RequestBody StoreRequest request) {
 
-        Role role = userCatalogueService.create(request);
+        Role role = roleService.create(request);
 
         RoleResource roleResource = RoleResource.builder()
                 .id(role.getId())
                 .name(role.getName())
-                .publish(role.getPublish())
+                .priority(role.getPriority())
                 .build();
 
         ApiResource<RoleResource> response = ApiResource.ok(roleResource, "Thêm bản ghi thành công");
@@ -69,12 +69,12 @@ public class RoleController {
     public ResponseEntity<?> update(@Valid @RequestBody UpdateRequest request, @PathVariable Long id) {
 
         try {
-            Role role = userCatalogueService.update(id, request);
+            Role role = roleService.update(id, request);
 
             RoleResource roleResource = RoleResource.builder()
                     .id(role.getId())
                     .name(role.getName())
-                    .publish(role.getPublish())
+                    .priority(role.getPriority())
                     .build();
 
             ApiResource<RoleResource> response = ApiResource.ok(roleResource, "Cập nhật bản ghi thành công");
@@ -88,5 +88,12 @@ public class RoleController {
                     ApiResource.error("INTERNAL_SERVER_ERROR", "Có lỗi xảy ra trong quá trình cập nhật", HttpStatus.INTERNAL_SERVER_ERROR
             ));
         }
+    }
+
+    @GetMapping("/roles/{id}")
+    public ResponseEntity<?> findById(@PathVariable Long id) {
+        RoleResource data = roleService.findById(id);
+        ApiResource<RoleResource> response = ApiResource.ok(data, "Success");
+        return ResponseEntity.ok(response);
     }
 }

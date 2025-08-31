@@ -4,13 +4,15 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
-@Builder(toBuilder = true)
-@Data
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder(toBuilder = true)
 @Entity
 @Table(name = "roles")
 public class Role {
@@ -24,18 +26,20 @@ public class Role {
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 
+    // DB column vẫn tên publish, field là priority (được)
     @Column(name = "publish", nullable = false, columnDefinition = "TINYINT")
-    private Integer publish;
+    private Integer priority;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.LAZY) // đổi LAZY cho performance
     @JoinTable(
             name = "role_permissions",
             joinColumns = @JoinColumn(name = "role_id"),
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
-    private Set<Permission> permissions;
+    private Set<Permission> permissions = new HashSet<>(); // KHỞI TẠO RỖNG
 
-    @Column(name = "created_at", updatable=false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
@@ -44,6 +48,7 @@ public class Role {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = createdAt;
     }
 
     @PreUpdate
@@ -51,4 +56,15 @@ public class Role {
         updatedAt = LocalDateTime.now();
     }
 
+    // equals/hashCode chỉ dựa trên id để tránh kéo quan hệ
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Role role)) return false;
+        return id != null && id.equals(role.id);
+    }
+    @Override
+    public int hashCode() {
+        return 31;
+    }
 }

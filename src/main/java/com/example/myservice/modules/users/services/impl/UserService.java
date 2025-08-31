@@ -51,7 +51,7 @@ public class UserService extends BaseService implements UserServiceInterface {
                     .map(role -> RoleResource.builder()
                             .id(role.getId())
                             .name(role.getName())
-                            .publish(role.getPublish())
+                            .priority(role.getPriority())
                             .build())
                     .collect(Collectors.toSet());
 

@@ -10,4 +10,5 @@ public interface PermissionServiceInterface {
     Permission create(PermissionCreationRequest request);
     Permission update(Long id, PermissionUpdateRequest request);
     Page<Permission> paginate(Map<String, String[]> parameters);
+    void delete(Long id);
 }

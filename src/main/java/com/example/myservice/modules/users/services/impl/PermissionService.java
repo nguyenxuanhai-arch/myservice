@@ -67,4 +67,11 @@ public class PermissionService extends BaseService implements PermissionServiceI
         Pageable pageable = PageRequest.of(page - 1, perPage, sort);
         return permissionRepository.findAll(specification ,pageable);
     }
+
+    @Override
+    public void delete(Long id) {
+        permissionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Quyền người dùng không tồn tại với id: " + id));
+        permissionRepository.deleteById(id);
+    }
 }
