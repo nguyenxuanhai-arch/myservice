@@ -1,43 +1,39 @@
 package com.example.myservice.modules.users.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.*;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+@Builder(toBuilder = true)
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users")
 @Entity
-@Getter
-@Setter
-public class User {
+@Table(name = "roles")
+public class Role {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
-    @Column(name = "user_catalogue_id")
-    private Long userCatalogueId;
-
+    @Size(max = 50)
+    @NotNull
+    @Column(name = "name", nullable = false, length = 50)
     private String name;
-    private String email;
-    private String password;
-    private String phone;
-    private String address;
-    private String image;
+
+    @Column(name = "publish", nullable = false, columnDefinition = "TINYINT")
+    private Integer publish;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
+            name = "role_permissions",
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
-    private Set<Role> roles;
+    private Set<Permission> permissions;
 
     @Column(name = "created_at", updatable=false)
     private LocalDateTime createdAt;
@@ -54,4 +50,5 @@ public class User {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
 }

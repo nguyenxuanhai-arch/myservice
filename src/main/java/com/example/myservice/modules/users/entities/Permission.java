@@ -1,30 +1,30 @@
 package com.example.myservice.modules.users.entities;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import lombok.*;
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Builder(toBuilder = true)
+import java.time.LocalDateTime;
+import java.util.Set;
+
 @Data
+@Entity
+@Table(name = "permissions")
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "user_catalogues")
-public class UserCatalogue {
-
+public class Permission {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Size(max = 50)
-    @NotNull
-    @Column(name = "name", nullable = false, length = 50)
     private String name;
+    private String description;
 
-    @Column(name = "publish", nullable = false, columnDefinition = "TINYINT")
-    private Integer publish;
+    @ManyToMany(mappedBy = "permissions")
+    private Set<Role> roles;
 
     @Column(name = "created_at", updatable=false)
     private LocalDateTime createdAt;
@@ -32,14 +32,13 @@ public class UserCatalogue {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
-
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
 
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 }

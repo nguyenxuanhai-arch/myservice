@@ -1,10 +1,10 @@
 package com.example.myservice.modules.users.services.impl;
 
-import com.example.myservice.modules.users.entities.UserCatalogue;
-import com.example.myservice.modules.users.repositories.UserCatalogueRepository;
-import com.example.myservice.modules.users.requests.UserCatalogue.StoreRequest;
-import com.example.myservice.modules.users.requests.UserCatalogue.UpdateRequest;
-import com.example.myservice.modules.users.services.interfaces.UserCatalogueInterface;
+import com.example.myservice.modules.users.entities.Role;
+import com.example.myservice.modules.users.repositories.RoleRepository;
+import com.example.myservice.modules.users.requests.Role.StoreRequest;
+import com.example.myservice.modules.users.requests.Role.UpdateRequest;
+import com.example.myservice.modules.users.services.interfaces.RoleServiceInterface;
 import com.example.myservice.services.BaseService;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
@@ -22,16 +22,16 @@ import com.example.myservice.specifications.BaseSpecification;
 import org.springframework.data.jpa.domain.Specification;
 
 @Service
-public class UserCatalogueService extends BaseService implements UserCatalogueInterface {
+public class RoleService extends BaseService implements RoleServiceInterface {
 
     @Autowired
-    private UserCatalogueRepository userCatalogueRepository;
+    private RoleRepository roleRepository;
 
-    private static final Logger logger = LoggerFactory.getLogger(UserCatalogueService.class);
+    private static final Logger logger = LoggerFactory.getLogger(RoleService.class);
 
 
     @Override
-    public Page<UserCatalogue> paginate(Map<String, String[]> parameters) {
+    public Page<Role> paginate(Map<String, String[]> parameters) {
         int page = parameters.containsKey("page") ? Integer.parseInt(parameters.get("page")[0]) : 1;
         int perPage = parameters.containsKey("perPage") ? Integer.parseInt(parameters.get("perPage")[0]) : 20;
         String sortParam = parameters.containsKey("sort") ? parameters.get("sort")[0] : null;
@@ -45,24 +45,24 @@ public class UserCatalogueService extends BaseService implements UserCatalogueIn
         logger.info("filterSimple: {}",filterSimple);
         logger.info("filterComple: {}" , filterComplex);
 
-       Specification<UserCatalogue> specification = Specification.where(
-            BaseSpecification.<UserCatalogue>keyword(keyword, "name"))
-               .and(BaseSpecification.<UserCatalogue>whereSpec(filterSimple)
-                       .and(BaseSpecification.<UserCatalogue>complexWhereSpec(filterComplex)));
+       Specification<Role> specification = Specification.where(
+            BaseSpecification.<Role>keyword(keyword, "name"))
+               .and(BaseSpecification.<Role>whereSpec(filterSimple)
+                       .and(BaseSpecification.<Role>complexWhereSpec(filterComplex)));
 
         Pageable pageable = PageRequest.of(page - 1, perPage, sort);
-        return userCatalogueRepository.findAll(specification ,pageable);
+        return roleRepository.findAll(specification ,pageable);
     }
 
     @Override
     @Transactional
-    public UserCatalogue create(StoreRequest request) {
+    public Role create(StoreRequest request) {
         try {
-            UserCatalogue payload = UserCatalogue.builder()
+            Role payload = Role.builder()
                     .name(request.getName())
                     .publish((request.getPublish()))
                     .build();
-            return userCatalogueRepository.save(payload);
+            return roleRepository.save(payload);
         } catch (Exception e) {
             throw new RuntimeException("Transaction failed" + e.getMessage());
         }
@@ -70,17 +70,16 @@ public class UserCatalogueService extends BaseService implements UserCatalogueIn
 
     @Override
     @Transactional
-    public UserCatalogue update(Long id, UpdateRequest request) {
+    public Role update(Long id, UpdateRequest request) {
 
-        UserCatalogue userCatalogue = userCatalogueRepository.findById(id)
+        Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Nhóm thành viên không tồn tại"));
 
-        UserCatalogue payload = userCatalogue.toBuilder()
+        Role payload = role.toBuilder()
                 .name(request.getName())
                 .publish(request.getPublish())
                 .build();
 
-        return userCatalogueRepository.save(payload);
+        return roleRepository.save(payload);
     }
-
 }

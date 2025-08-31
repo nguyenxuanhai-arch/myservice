@@ -8,9 +8,8 @@ import lombok.*;
 @Builder
 @RequiredArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserCatalogueResource {
+public class RoleResource {
     private final Long id;
     private final String name;
     private final Integer publish;
-
 }

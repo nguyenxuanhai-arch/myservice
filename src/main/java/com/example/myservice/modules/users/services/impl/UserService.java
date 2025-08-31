@@ -1,11 +1,11 @@
 package com.example.myservice.modules.users.services.impl;
 
+import com.example.myservice.modules.users.entities.Role;
+import com.example.myservice.modules.users.resources.RoleResource;
 import com.example.myservice.modules.users.services.interfaces.UserServiceInterface;
 import com.example.myservice.resources.ApiResource;
 import com.example.myservice.services.BaseService;
 import com.example.myservice.services.JwtService;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -18,10 +18,11 @@ import com.example.myservice.modules.users.resources.LoginResource;
 import com.example.myservice.modules.users.resources.UserResource;
 import com.example.myservice.modules.users.repositories.UserRepository;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Service
 public class UserService extends BaseService implements UserServiceInterface {
-
-    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     @Autowired
     private JwtService jwtService;
@@ -45,12 +46,24 @@ public class UserService extends BaseService implements UserServiceInterface {
             {
                 throw new BadCredentialsException("Email hoac mat khau khong dung");
             }
+            Set<RoleResource> roleResources = user.getRoles()
+                    .stream()
+                    .map(role -> RoleResource.builder()
+                            .id(role.getId())
+                            .name(role.getName())
+                            .publish(role.getPublish())
+                            .build())
+                    .collect(Collectors.toSet());
+
             UserResource userResource = UserResource.builder()
                     .id(user.getId())
                     .email(user.getEmail())
                     .name(user.getName())
                     .phone(user.getPhone())
+                    .roles(roleResources)
                     .build();
+
+
             String token = jwtService.generateToken(user.getId(), user.getEmail(), defaultExpiration);
             String refreshToken = jwtService.generateRefreshToken(user.getId(), user.getEmail());
             return new LoginResource(token, refreshToken, userResource);
@@ -60,6 +73,4 @@ public class UserService extends BaseService implements UserServiceInterface {
             return ApiResource.error("AUTH_ERROR", e.getMessage(), HttpStatus.UNAUTHORIZED);
         }
     }
-    
-
 }

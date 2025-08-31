@@ -1,11 +1,14 @@
 package com.example.myservice.modules.users.repositories;
 
-import com.example.myservice.modules.users.entities.UserCatalogue;
+import com.example.myservice.modules.users.entities.Role;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
-public interface UserCatalogueRepository extends JpaRepository<UserCatalogue, Long>, JpaSpecificationExecutor<UserCatalogue> {
+public interface RoleRepository extends JpaRepository<Role, Long>, JpaSpecificationExecutor<Role> {
+    Optional<Role> findByName(String name);
 }
