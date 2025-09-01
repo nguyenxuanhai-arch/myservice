@@ -11,9 +11,9 @@ import java.util.Map;
 public class ApiResource<T> {
     private boolean success;
     private String message;
-    private T data;
     private HttpStatus status;
     private LocalDateTime timestamp;
+    private T data;
     private ErrorResource error;
     private Map<String, String> errors;
 
@@ -92,9 +92,9 @@ public class ApiResource<T> {
     public static <T> ApiResource<T> ok(T data, String message) {
         return ApiResource.<T>builder()
                 .success(true)
-                .data(data)
                 .message(message)
                 .status(HttpStatus.OK)
+                .data(data)
                 .build();
     }
 

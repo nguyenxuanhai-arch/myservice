@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.example.myservice.config.JwtConfig;
+import com.example.myservice.security.JwtConfig;
 import io.jsonwebtoken.security.Keys;
 import java.util.Optional;
 import java.util.UUID;
@@ -51,8 +51,8 @@ public class JwtService {
         Date expiryDate = new Date(now.getTime() + expirationTime);
 
         return Jwts.builder()
-                .setSubject(String.valueOf(userId))
-                .claim("email", email)
+                .setSubject(email)
+                .claim("uid", userId)
                 .setIssuer(jwtConfig.getIssuer())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
@@ -87,7 +87,8 @@ public class JwtService {
 
     public String getUserIdFromJwt(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
-        return claims.getSubject();
+        Number uid = claims.get("uid", Number.class);
+        return uid == null ? null : String.valueOf(uid.longValue());
     }
 
     public boolean isTokenFormatValid(String token) {
@@ -157,7 +158,7 @@ public class JwtService {
 
     public String getEmailFromToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
-        return claims.get("email", String.class);
+        return claims.getSubject();
     }
 
     public boolean isBlacklistedToken(String token) {

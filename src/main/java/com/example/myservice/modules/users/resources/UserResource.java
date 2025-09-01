@@ -1,11 +1,7 @@
 package com.example.myservice.modules.users.resources;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 import java.util.Set;
 
@@ -20,5 +16,7 @@ public class UserResource {
     private final String email;
     private final String name;
     private final String phone;
-    private final Set<RoleResource> roles;
+    private final Set<String> roles;
+    private final Set<String> permissions;
+
 }

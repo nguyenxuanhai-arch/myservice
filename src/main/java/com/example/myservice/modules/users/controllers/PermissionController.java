@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,7 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
-@RequestMapping("api/v1")
+@RequestMapping("api/v1/permissions")
 public class PermissionController {
     private final PermissionServiceInterface permissionService;
 
@@ -26,7 +27,7 @@ public class PermissionController {
         this.permissionService = permissionService;
     }
 
-    @GetMapping("/permissions")
+    @GetMapping
     public ResponseEntity<?> index(HttpServletRequest request) {
         Map<String, String[]> parameter = request.getParameterMap();
         Page<Permission> permissions =  permissionService.paginate(parameter);
@@ -39,7 +40,7 @@ public class PermissionController {
         return ResponseEntity.ok(resource);
      }
 
-     @PostMapping("/permissions")
+     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody PermissionCreationRequest request) {
         Permission permission= permissionService.create(request);
         PermissionResource resource = PermissionResource.builder()
@@ -51,7 +52,7 @@ public class PermissionController {
         return ResponseEntity.ok(response);
      }
 
-     @PutMapping("/permissions/{id}")
+     @PutMapping("/{id}")
      public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody PermissionUpdateRequest request) {
         try {
             Permission permission = permissionService.update(id, request);
@@ -73,7 +74,7 @@ public class PermissionController {
         }
      }
 
-     @DeleteMapping("/permissions/{id}")
+     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
             permissionService.delete(id);

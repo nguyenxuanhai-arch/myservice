@@ -1,6 +1,6 @@
 package com.example.myservice.helps;
 
-import com.example.myservice.modules.users.services.impl.CustomUserDetailsService;
+import com.example.myservice.security.details.CustomUserDetailsService;
 import com.example.myservice.resources.ApiResource;
 import com.example.myservice.services.JwtService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -37,67 +38,57 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/api/v1/auth/login") || path.startsWith("/api/v1/auth/refresh");
+        return path.startsWith("/api/v1/auth/login")
+                || path.startsWith("/api/v1/auth/refresh")
+                || path.startsWith("/api/v1/auth/register");
     }
 
     @Override
-    public void doFilterInternal(
+    protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
-    ) throws IOException {
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String userID;
+    ) throws ServletException, IOException {
 
+        final String authHeader = request.getHeader("Authorization");
+
+        // Không ép 401 khi thiếu token; để Security quyết định (permitAll hoặc authenticated)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            sendErrorResponse(response, request, HttpStatus.UNAUTHORIZED, "Xác thực thất bại", "Không tìm thấy token");
+            filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7);
+        final String jwt = authHeader.substring(7);
 
         try {
             if (!jwtService.isTokenFormatValid(jwt)) {
-                sendErrorResponse(response, request, HttpStatus.UNAUTHORIZED, "Xác thực thất bại", "Token không đúng định dạng");
-                return;
+                throw new BadCredentialsException("Token không đúng định dạng");
             }
-
-            if (!jwtService.isIssureToken(jwt)) {
-                sendErrorResponse(response, request, HttpStatus.UNAUTHORIZED, "Xác thực thất bại", "Nguồn gốc token không hợp lệ");
-                return;
+            if (!jwtService.isIssureToken(jwt)) { // giữ tên hàm của mày
+                throw new BadCredentialsException("Nguồn gốc token không hợp lệ");
             }
-
             if (!jwtService.isSignatureValid(jwt)) {
-                sendErrorResponse(response, request, HttpStatus.UNAUTHORIZED, "Xác thực thất bại", "Chữ ký không hợp lệ");
-                return;
+                throw new BadCredentialsException("Chữ ký không hợp lệ");
             }
-
             if (jwtService.isTokenExpired(jwt)) {
-                sendErrorResponse(response, request, HttpStatus.UNAUTHORIZED, "Xác thực thất bại", "Token đã hết hạn");
-                return;
+                throw new BadCredentialsException("Token đã hết hạn");
             }
-
             if (jwtService.isBlacklistedToken(jwt)) {
-                sendErrorResponse(response, request, HttpStatus.UNAUTHORIZED, "Xác thực thất bại", "Token đã bị khóa");
-                return;
+                throw new BadCredentialsException("Token đã bị khóa");
             }
 
-            userID = jwtService.getUserIdFromJwt(jwt);
-            if (userID != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = customUserDetailsService.loadUserByUsername(userID);
+            // === LẤY EMAIL TỪ SUBJECT ===
+            final String email = jwtService.getEmailFromToken(jwt);
 
-                final String emailFromToken = jwtService.getEmailFromToken(jwt);
-                if (!emailFromToken.equals(userDetails.getUsername())) {
-                    sendErrorResponse(response, request, HttpStatus.UNAUTHORIZED, "Xác thực thất bại", "User token không chính xác");
-                    return;
-                }
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
 
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
@@ -106,18 +97,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         } catch (ExpiredJwtException e) {
             sendErrorResponse(response, request, HttpStatus.UNAUTHORIZED, "Xác thực thất bại", "Token đã hết hạn");
+        } catch (BadCredentialsException e) {
+            sendErrorResponse(response, request, HttpStatus.UNAUTHORIZED, "Xác thực thất bại", e.getMessage());
         } catch (RuntimeException e) {
             logger.error("JWT RuntimeException: {}", e.getMessage());
-            if (e.getMessage() != null && e.getMessage().contains("Chữ ký token không hợp lệ")) {
-                sendErrorResponse(response, request, HttpStatus.UNAUTHORIZED, "Xác thực thất bại", "Chữ ký không hợp lệ");
-            } else if (e.getMessage() != null && e.getMessage().contains("Token không đúng định dạng")) {
-                sendErrorResponse(response, request, HttpStatus.UNAUTHORIZED, "Xác thực thất bại", "Token không đúng định dạng");
-            } else {
-                sendErrorResponse(response, request, HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi xử lý token", "Đã xảy ra lỗi không mong muốn khi xử lý token");
-            }
-        } catch (ServletException | IOException e) {
-            logger.error("Servlet/IO Exception: {}", e.getMessage());
-            sendErrorResponse(response, request, HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống", e.getMessage());
+            sendErrorResponse(response, request, HttpStatus.UNAUTHORIZED, "Xác thực thất bại", "Token không hợp lệ");
         }
     }
 

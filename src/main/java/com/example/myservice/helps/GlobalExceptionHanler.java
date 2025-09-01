@@ -1,5 +1,6 @@
 package com.example.myservice.helps;
 
+import com.example.myservice.common.exception.UserAlreadyExistsException;
 import com.example.myservice.resources.ApiResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,5 +33,4 @@ public class GlobalExceptionHanler {
 
         return new ResponseEntity<>(response, HttpStatus.UNPROCESSABLE_ENTITY);
     }
-
 }

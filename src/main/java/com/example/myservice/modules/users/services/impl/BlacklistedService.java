@@ -30,8 +30,11 @@ public class BlacklistedService {
                 return ApiResource.error("TOKEN_ALREADY_EXISTS", "Token da ton tai trong blacklist", HttpStatus.BAD_REQUEST);
             }
            Claims claims = jwtService.getAllClaimsFromToken(request.getToken());
+
            Long userId = Long.valueOf(claims.getSubject());
+
            Date expiryDate = claims.getExpiration();
+
            BlacklistedToken blacklistedToken = new BlacklistedToken();
            blacklistedToken.setToken(request.getToken());
            blacklistedToken.setUserId(userId);

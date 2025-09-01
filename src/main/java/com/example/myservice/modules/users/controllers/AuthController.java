@@ -1,11 +1,14 @@
 package com.example.myservice.modules.users.controllers;
 
 import com.example.myservice.modules.users.entities.RefreshToken;
+import com.example.myservice.modules.users.entities.User;
 import com.example.myservice.modules.users.repositories.RefreshTokenRepository;
 import com.example.myservice.modules.users.requests.LoginRequest;
+import com.example.myservice.modules.users.requests.RegisterRequest;
 import com.example.myservice.modules.users.requests.RequestTokenRequest;
 import com.example.myservice.modules.users.resources.LoginResource;
 import com.example.myservice.modules.users.resources.RefreshTokenResource;
+import com.example.myservice.modules.users.resources.UserResource;
 import com.example.myservice.modules.users.services.interfaces.UserServiceInterface;
 import com.example.myservice.services.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +44,21 @@ public class AuthController {
 
     public AuthController(UserServiceInterface userService) {
         this.userService = userService;
+    }
+
+    @PostMapping("register")
+    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
+        Object result = userService.createUser(registerRequest);
+        if (result instanceof UserResource userResource) {
+            ApiResource<UserResource> response = ApiResource.ok(userResource, "Đăng kí thành công");
+            return ResponseEntity.ok(response);
+        }
+
+        if (result instanceof ApiResource errorResource) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResource);
+        }
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResource("Network Error"));
     }
 
     @PostMapping("login")
