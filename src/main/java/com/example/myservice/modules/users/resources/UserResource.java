@@ -5,18 +5,11 @@ import lombok.*;
 
 import java.util.Set;
 
-@RequiredArgsConstructor
-@Builder
-@Data
-@Getter
-@Setter
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class UserResource {
-    private final Long id;
-    private final String email;
-    private final String name;
-    private final String phone;
-    private final Set<String> roles;
-    private final Set<String> permissions;
-
+    private Long id;
+    private String email;
+    private String name;
+    private String phone;
+    private Set<RoleResource> roles;
 }

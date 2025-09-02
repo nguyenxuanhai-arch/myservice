@@ -2,6 +2,9 @@ package com.example.myservice.modules.users.repositories;
 
 import com.example.myservice.modules.users.entities.Role;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -15,4 +18,7 @@ public interface RoleRepository extends JpaRepository<Role, Long>, JpaSpecificat
     Optional<Role> findById(Long id);
 
     Optional<Role> findByName(String name);
+
+    @EntityGraph(attributePaths = {"permissions"})
+    Page<Role> findAll(Specification<Role> spec, Pageable pageable);
 }

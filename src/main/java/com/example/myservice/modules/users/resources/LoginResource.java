@@ -3,9 +3,9 @@ package com.example.myservice.modules.users.resources;
 public class LoginResource {
     private final String token;
     private final String refreshToken;
-    private final UserResource user;
+    private final AuthResource user;
 
-    public LoginResource(String token,String refreshToken, UserResource user) {
+    public LoginResource(String token,String refreshToken, AuthResource user) {
         this.token = token;
         this.refreshToken = refreshToken;
         this.user = user;
@@ -19,7 +19,7 @@ public class LoginResource {
         return token;
     }
 
-    public UserResource getUser() {
+    public AuthResource getUser() {
         return user;
     }
 

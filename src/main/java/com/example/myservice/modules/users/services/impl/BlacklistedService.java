@@ -31,7 +31,7 @@ public class BlacklistedService {
             }
            Claims claims = jwtService.getAllClaimsFromToken(request.getToken());
 
-           Long userId = Long.valueOf(claims.getSubject());
+           Long userId = Long.valueOf(claims.get("uid").toString());
 
            Date expiryDate = claims.getExpiration();
 

@@ -72,46 +72,10 @@ public class SecurityConfig {
 
                         // ===== ROLES =====
                         // READ (list + detail) -> STAFF, PERMISSION_READ, ADMIN
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/v1/roles",
-                                "/api/v1/roles/*"
-                        ).hasAnyAuthority("STAFF", "PERMISSION_READ", "ADMIN")
-
-                        // UPDATE (PUT/POST) -> STAFF, PERMISSION_UPDATE, ADMIN
-                        .requestMatchers(HttpMethod.PUT,   "/api/v1/roles/**")
-                        .hasAnyAuthority("STAFF", "PERMISSION_UPDATE", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/roles/**")
-                        .hasAnyAuthority("STAFF", "PERMISSION_UPDATE", "ADMIN")
-
-                        // CREATE (POST) -> chỉ quyền chi tiết hoặc ADMIN (KHÔNG STAFF)
-                        .requestMatchers(HttpMethod.POST,  "/api/v1/roles/**")
-                        .hasAnyAuthority("PERMISSION_CREATE", "ADMIN")
-
-                        // DELETE -> chỉ quyền chi tiết hoặc ADMIN (KHÔNG STAFF)
-                        .requestMatchers(HttpMethod.DELETE,"/api/v1/roles/**")
-                        .hasAnyAuthority("PERMISSION_DELETE", "ADMIN")
-
-                        // ===== PERMISSIONS =====
-                        // READ (list + detail) -> STAFF, PERMISSION_READ, ADMIN
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/v1/permissions",
-                                "/api/v1/permissions/*"
-                        ).hasAnyAuthority("STAFF", "PERMISSION_READ", "ADMIN")
-
-                        // UPDATE (PUT/PATCH) -> STAFF, PERMISSION_UPDATE, ADMIN
-                        .requestMatchers(HttpMethod.PUT,   "/api/v1/permissions/**")
-                        .hasAnyAuthority("STAFF", "PERMISSION_UPDATE", "ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/permissions/**")
-                        .hasAnyAuthority("STAFF", "PERMISSION_UPDATE", "ADMIN")
-
-                        // CREATE (POST) -> chỉ quyền chi tiết hoặc ADMIN (KHÔNG STAFF)
-                        .requestMatchers(HttpMethod.POST,  "/api/v1/permissions/**")
-                        .hasAnyAuthority("PERMISSION_CREATE", "ADMIN")
-
-                        // DELETE -> chỉ quyền chi tiết hoặc ADMIN (KHÔNG STAFF)
-                        .requestMatchers(HttpMethod.DELETE,"/api/v1/permissions/**")
-                        .hasAnyAuthority("PERMISSION_DELETE", "ADMIN")
-
+                        .requestMatchers(
+                                "/api/v1/permissions/**",
+                                "/api/v1/roles/**"
+                        ).hasAnyAuthority( "ADMIN")
                         // ===== Others =====
                         .anyRequest().authenticated()
                 )

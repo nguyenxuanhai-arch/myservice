@@ -2,7 +2,10 @@ package com.example.myservice.modules.users.services.impl;
 
 import com.example.myservice.modules.users.entities.Permission;
 import com.example.myservice.modules.users.entities.Role;
+import com.example.myservice.modules.users.mapper.RoleMapper;
+import com.example.myservice.modules.users.repositories.PermissionRepository;
 import com.example.myservice.modules.users.repositories.RoleRepository;
+import com.example.myservice.modules.users.requests.PermissionCreationRequest;
 import com.example.myservice.modules.users.requests.Role.StoreRequest;
 import com.example.myservice.modules.users.requests.Role.UpdateRequest;
 import com.example.myservice.modules.users.resources.PermissionResource;
@@ -20,6 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import com.example.myservice.helps.FilterParameter;
+
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,7 +39,12 @@ public class RoleService extends BaseService implements RoleServiceInterface {
     @Autowired
     private RoleRepository roleRepository;
 
+    @Autowired
+    private PermissionRepository permissionRepository;
+
     private static final Logger logger = LoggerFactory.getLogger(RoleService.class);
+    @Autowired
+    private RoleMapper roleMapper;
 
 
     @Override
@@ -65,20 +76,7 @@ public class RoleService extends BaseService implements RoleServiceInterface {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Nhóm thành viên không tồn tại"));
 
-        Set<PermissionResource> permissions = role.getPermissions()
-                .stream().
-                map(permission -> PermissionResource.builder()
-                        .id(permission.getId())
-                        .name(permission.getName())
-                        .description(permission.getDescription())
-                        .build())
-                .collect(Collectors.toSet());
-        return RoleResource.builder()
-                .id(role.getId())
-                .name(role.getName())
-                .priority(role.getPriority())
-                .permissions(permissions)
-                .build();
+        return roleMapper.tResource(role);
     }
 
     @Override
@@ -108,5 +106,34 @@ public class RoleService extends BaseService implements RoleServiceInterface {
                 .build();
 
         return roleRepository.save(payload);
+    }
+
+    @Override
+    public void delete(Long id) {
+        roleRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Quyền người dùng không tồn tại với id: " + id));
+        roleRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public RoleResource updatePermissionsForRole(Long roleId, Set<Long> permissionIds) {
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new EntityNotFoundException("Role không tồn tại"));
+
+        List<Permission> found = permissionRepository.findAllById(permissionIds);
+        if (found.size() != permissionIds.size()) {
+            Set<Long> foundIds = new HashSet<>();
+            for (Permission p : found) foundIds.add(p.getId());
+            Set<Long> missing = new HashSet<>(permissionIds);
+            missing.removeAll(foundIds);
+            throw new EntityNotFoundException("Permission không tồn tại: " + missing);
+        }
+
+        role.getPermissions().clear();
+        role.getPermissions().addAll(found);
+
+        Role saved = roleRepository.save(role);
+        return roleMapper.toRoleResource(saved);
     }
 }

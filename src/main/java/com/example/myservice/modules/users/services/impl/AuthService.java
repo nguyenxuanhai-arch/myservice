@@ -3,12 +3,15 @@ package com.example.myservice.modules.users.services.impl;
 import com.example.myservice.common.exception.UserAlreadyExistsException;
 import com.example.myservice.modules.users.entities.Permission;
 import com.example.myservice.modules.users.entities.Role;
+import com.example.myservice.modules.users.mapper.UserMapper;
 import com.example.myservice.modules.users.repositories.RoleRepository;
 import com.example.myservice.modules.users.requests.RegisterRequest;
+import com.example.myservice.modules.users.resources.AuthResource;
 import com.example.myservice.modules.users.services.interfaces.UserServiceInterface;
 import com.example.myservice.resources.ApiResource;
 import com.example.myservice.services.BaseService;
 import com.example.myservice.services.JwtService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -25,6 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 @Service
 public class AuthService extends BaseService implements UserServiceInterface {
 
@@ -43,6 +47,9 @@ public class AuthService extends BaseService implements UserServiceInterface {
     @Value("${jwt.defaultExpiration}")
     private long defaultExpiration;
 
+    @Autowired
+    private final UserMapper userMapper;
+
     @Override
     public Object authenticate(LoginRequest request) {
         try {
@@ -53,25 +60,18 @@ public class AuthService extends BaseService implements UserServiceInterface {
             {
                 throw new BadCredentialsException("Email hoac mat khau khong dung");
             }
-            Set<String> permissionName = user.getRoles().stream()
-                    .flatMap(r -> r.getPermissions().stream())
-                    .map(Permission::getName) // ví dụ PRODUCT_READ
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
 
             Set<String> roleName = user.getRoles().stream()
-                    .map(Role::getName) // ví dụ ADMIN, STAFF
+                    .map(Role::getName)
                     .collect(Collectors.toCollection(LinkedHashSet::new));
 
-
-            UserResource userResource = UserResource.builder()
+            AuthResource userResource = AuthResource.builder()
                     .id(user.getId())
                     .email(user.getEmail())
                     .name(user.getName())
                     .phone(user.getPhone())
                     .roles(roleName)
-                    .permissions(permissionName)
                     .build();
-
 
             String token = jwtService.generateToken(user.getId(), user.getEmail(), defaultExpiration);
             String refreshToken = jwtService.generateRefreshToken(user.getId(), user.getEmail());
@@ -87,24 +87,7 @@ public class AuthService extends BaseService implements UserServiceInterface {
     public UserResource getUserFromEmail(String email) {
         User user = userRepository.findByEmailWithRolesAndPermissions(email).orElseThrow(() -> new RuntimeException("User not found"));
 
-        Set<String> permissionName = user.getRoles().stream()
-                .flatMap(r -> r.getPermissions().stream())
-                .map(Permission::getName) // ví dụ PRODUCT_READ
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-
-        Set<String> roleName = user.getRoles().stream()
-                .map(Role::getName) // ví dụ ADMIN, STAFF
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-
-
-        return UserResource.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .name(user.getName())
-                .phone(user.getPhone())
-                .roles(permissionName)
-                .permissions(roleName)
-                .build();
+        return userMapper.tResource(user);
     }
 
     @Override

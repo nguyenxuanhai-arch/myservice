@@ -1,6 +1,7 @@
 package com.example.myservice.modules.users.controllers;
 
 import com.example.myservice.modules.users.entities.Permission;
+import com.example.myservice.modules.users.mapper.PermissionMapper;
 import com.example.myservice.modules.users.requests.PermissionCreationRequest;
 import com.example.myservice.modules.users.requests.PermissionUpdateRequest;
 import com.example.myservice.modules.users.resources.PermissionResource;
@@ -22,20 +23,18 @@ import jakarta.servlet.http.HttpServletRequest;
 @RequestMapping("api/v1/permissions")
 public class PermissionController {
     private final PermissionServiceInterface permissionService;
+    private final PermissionMapper permissionMapper;
 
-    public PermissionController(PermissionServiceInterface permissionService) {
+    public PermissionController(PermissionServiceInterface permissionService, PermissionMapper permissionMapper) {
         this.permissionService = permissionService;
+        this.permissionMapper = permissionMapper;
     }
 
     @GetMapping
     public ResponseEntity<?> index(HttpServletRequest request) {
         Map<String, String[]> parameter = request.getParameterMap();
         Page<Permission> permissions =  permissionService.paginate(parameter);
-        Page<PermissionResource> permissionResources = permissions.map(permission -> PermissionResource.builder()
-                .id(permission.getId())
-                .name(permission.getName())
-                .description(permission.getDescription())
-                .build());
+        Page<PermissionResource> permissionResources = permissions.map(permissionMapper::tResource);
         ApiResource<Page<PermissionResource>> resource = ApiResource.ok(permissionResources, "Success");
         return ResponseEntity.ok(resource);
      }
@@ -43,11 +42,7 @@ public class PermissionController {
      @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody PermissionCreationRequest request) {
         Permission permission= permissionService.create(request);
-        PermissionResource resource = PermissionResource.builder()
-                .id(permission.getId())
-                .name(permission.getName())
-                .description(permission.getDescription())
-                .build();
+        PermissionResource resource = permissionMapper.tResource(permission);
         ApiResource<PermissionResource> response = ApiResource.ok(resource, "Thêm bản ghi thành công");
         return ResponseEntity.ok(response);
      }
@@ -56,11 +51,7 @@ public class PermissionController {
      public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody PermissionUpdateRequest request) {
         try {
             Permission permission = permissionService.update(id, request);
-            PermissionResource resource = PermissionResource.builder()
-                    .id(permission.getId())
-                    .name(permission.getName())
-                    .description(permission.getDescription())
-                    .build();
+            PermissionResource resource = permissionMapper.tResource(permission);
             ApiResource<PermissionResource> response = ApiResource.ok(resource, "Cập nhật thành công quyền người dùng");
             return ResponseEntity.ok(response);
         } catch (EntityNotFoundException e) {

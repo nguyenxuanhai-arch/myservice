@@ -1,6 +1,8 @@
 package com.example.myservice.modules.users.controllers;
 
 import com.example.myservice.modules.users.entities.Role;
+import com.example.myservice.modules.users.mapper.RoleMapper;
+import com.example.myservice.modules.users.requests.PermissionCreationRequest;
 import com.example.myservice.modules.users.requests.Role.StoreRequest;
 import com.example.myservice.modules.users.requests.Role.UpdateRequest;
 import com.example.myservice.modules.users.resources.RoleResource;
@@ -23,61 +25,46 @@ import java.util.Map;
 
 @Validated
 @Controller
-@RequestMapping("api/v1")
+@RequestMapping("api/v1/roles")
 public class RoleController {
 
     private static final Logger logger = LoggerFactory.getLogger(RoleController.class);
     private final RoleServiceInterface roleService;
-    public RoleController(RoleServiceInterface roleServiceInterface) {
+    private final RoleMapper roleMapper;
+    public RoleController(RoleServiceInterface roleServiceInterface, RoleMapper roleMapper) {
         this.roleService = roleServiceInterface;
+        this.roleMapper = roleMapper;
     }
 
-    @GetMapping("/roles")
+    @GetMapping
     public ResponseEntity<?> index(HttpServletRequest request)
     {
         Map<String, String[]> parameters = request.getParameterMap();
         Page<Role> userCatalogues = roleService.paginate(parameters);
 
-        Page<RoleResource> userCatalogueResource = userCatalogues.map(role ->
-                RoleResource.builder()
-                        .id(role.getId())
-                        .name(role.getName())
-                        .priority(role.getPriority())
-                        .build()
+        Page<RoleResource> roleResources = userCatalogues.map(roleMapper::tResource
         );
-        ApiResource<Page<RoleResource>> response = ApiResource.ok(userCatalogueResource,
+        ApiResource<Page<RoleResource>> response = ApiResource.ok(roleResources,
                 " SUCCESS");
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/roles")
+    @PostMapping
     public ResponseEntity<?> store(@Valid @RequestBody StoreRequest request) {
-
         Role role = roleService.create(request);
-
-        RoleResource roleResource = RoleResource.builder()
-                .id(role.getId())
-                .name(role.getName())
-                .priority(role.getPriority())
-                .build();
+        RoleResource roleResource = roleMapper.tResource(role);
 
         ApiResource<RoleResource> response = ApiResource.ok(roleResource, "Thêm bản ghi thành công");
         logger.info("Method store running...");
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/roles/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> update(@Valid @RequestBody UpdateRequest request, @PathVariable Long id) {
 
         try {
             Role role = roleService.update(id, request);
-
-            RoleResource roleResource = RoleResource.builder()
-                    .id(role.getId())
-                    .name(role.getName())
-                    .priority(role.getPriority())
-                    .build();
-
+            RoleResource roleResource = roleMapper.tResource(role);
             ApiResource<RoleResource> response = ApiResource.ok(roleResource, "Cập nhật bản ghi thành công");
             return ResponseEntity.ok(response);
         } catch (EntityNotFoundException e) {
@@ -91,10 +78,50 @@ public class RoleController {
         }
     }
 
-    @GetMapping("/roles/{id}")
+//    @PutMapping("/{id}")
+//    public ResponseEntity<?> updatePermissioniForRole(@Valid @RequestBody PermissionCreationRequest request, @PathVariable Long id) {
+//        try {
+//            Role role = roleService.updatePermissionsForRole(id, request);
+//            RoleResource roleResource = roleMapper.tResource(role);
+//            ApiResource<RoleResource> response = ApiResource.ok(roleResource, "Cập nhật bản ghi thành công");
+//            return ResponseEntity.ok(response);
+//        }  catch (EntityNotFoundException e) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+//                    ApiResource.error("NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND)
+//            );
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+//                    ApiResource.error("INTERNAL_SERVER_ERROR", "Có lỗi xảy ra trong quá trình cập nhật", HttpStatus.INTERNAL_SERVER_ERROR
+//                    ));
+//        }
+//    }
+
+    @GetMapping("/{id}")
     public ResponseEntity<?> findById(@PathVariable Long id) {
         RoleResource data = roleService.findById(id);
         ApiResource<RoleResource> response = ApiResource.ok(data, "Success");
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public  ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            roleService.delete(id);
+            return ResponseEntity.status(HttpStatus.OK).body(
+                    ApiResource.builder()
+                            .status(HttpStatus.OK)
+                            .message("Xoá thành công vai trò với id :" + id)
+                            .success(true)
+                            .build()
+            );
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ApiResource.error("NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND)
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    ApiResource.error("INTERNAL_SERVER_ERROR", "Có lỗi xảy ra trong quá trình cập nhật", HttpStatus.INTERNAL_SERVER_ERROR)
+            );
+        }
     }
 }
