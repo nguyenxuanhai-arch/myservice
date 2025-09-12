@@ -8,6 +8,5 @@ import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring", uses = {PermissionMapper.class})
 public interface RoleMapper {
-    @BeanMapping(builder = @Builder(disableBuilder = false))
     RoleResource tResource(Role role);
 }

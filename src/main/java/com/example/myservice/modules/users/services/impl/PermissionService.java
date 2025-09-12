@@ -3,13 +3,13 @@ package com.example.myservice.modules.users.services.impl;
 import com.example.myservice.helps.FilterParameter;
 import com.example.myservice.modules.users.entities.Permission;
 import com.example.myservice.modules.users.repositories.PermissionRepository;
-import com.example.myservice.modules.users.requests.PermissionCreationRequest;
-import com.example.myservice.modules.users.requests.PermissionUpdateRequest;
+import com.example.myservice.modules.users.requests.Permission.PermissionCreationRequest;
+import com.example.myservice.modules.users.requests.Permission.PermissionUpdationRequest;
 import com.example.myservice.modules.users.services.interfaces.PermissionServiceInterface;
 import com.example.myservice.services.BaseService;
 import com.example.myservice.specifications.BaseSpecification;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,10 +18,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import java.util.Map;
 
+@RequiredArgsConstructor
 @Service
 public class PermissionService extends BaseService implements PermissionServiceInterface {
-    @Autowired
-    private PermissionRepository permissionRepository;
+    private final PermissionRepository permissionRepository;
 
     @Override
     public Permission create(PermissionCreationRequest request) {
@@ -37,7 +37,7 @@ public class PermissionService extends BaseService implements PermissionServiceI
     }
 
     @Override
-    public Permission update(Long id, PermissionUpdateRequest request) {
+    public Permission update(Long id, PermissionUpdationRequest request) {
         Permission permission = permissionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Quyền người dùng không tồn tại với id: " + id));
         Permission payload = permission.toBuilder()

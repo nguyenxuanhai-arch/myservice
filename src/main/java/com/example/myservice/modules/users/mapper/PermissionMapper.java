@@ -2,6 +2,8 @@ package com.example.myservice.modules.users.mapper;
 
 import com.example.myservice.modules.users.entities.Permission;
 import com.example.myservice.modules.users.resources.PermissionResource;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")

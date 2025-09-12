@@ -1,4 +1,4 @@
-package com.example.myservice.modules.users.requests;
+package com.example.myservice.modules.users.requests.Auth;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

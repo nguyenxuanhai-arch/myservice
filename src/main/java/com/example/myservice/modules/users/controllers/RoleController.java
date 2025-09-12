@@ -2,21 +2,21 @@ package com.example.myservice.modules.users.controllers;
 
 import com.example.myservice.modules.users.entities.Role;
 import com.example.myservice.modules.users.mapper.RoleMapper;
-import com.example.myservice.modules.users.requests.PermissionCreationRequest;
-import com.example.myservice.modules.users.requests.Role.StoreRequest;
-import com.example.myservice.modules.users.requests.Role.UpdateRequest;
+import com.example.myservice.modules.users.requests.Role.RoleCreationRequest;
+import com.example.myservice.modules.users.requests.Role.RoleUpdationRequest;
+import com.example.myservice.modules.users.requests.Role.RolePermissionUpdationRequest;
 import com.example.myservice.modules.users.resources.RoleResource;
 import com.example.myservice.modules.users.services.interfaces.RoleServiceInterface;
 import com.example.myservice.resources.ApiResource;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -25,16 +25,13 @@ import java.util.Map;
 
 @Validated
 @Controller
+@RequiredArgsConstructor
 @RequestMapping("api/v1/roles")
 public class RoleController {
 
     private static final Logger logger = LoggerFactory.getLogger(RoleController.class);
     private final RoleServiceInterface roleService;
     private final RoleMapper roleMapper;
-    public RoleController(RoleServiceInterface roleServiceInterface, RoleMapper roleMapper) {
-        this.roleService = roleServiceInterface;
-        this.roleMapper = roleMapper;
-    }
 
     @GetMapping
     public ResponseEntity<?> index(HttpServletRequest request)
@@ -50,7 +47,7 @@ public class RoleController {
     }
 
     @PostMapping
-    public ResponseEntity<?> store(@Valid @RequestBody StoreRequest request) {
+    public ResponseEntity<?> store(@Valid @RequestBody RoleCreationRequest request) {
         Role role = roleService.create(request);
         RoleResource roleResource = roleMapper.tResource(role);
 
@@ -60,7 +57,7 @@ public class RoleController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@Valid @RequestBody UpdateRequest request, @PathVariable Long id) {
+    public ResponseEntity<?> update(@Valid @RequestBody RoleUpdationRequest request, @PathVariable Long id) {
 
         try {
             Role role = roleService.update(id, request);
@@ -78,23 +75,22 @@ public class RoleController {
         }
     }
 
-//    @PutMapping("/{id}")
-//    public ResponseEntity<?> updatePermissioniForRole(@Valid @RequestBody PermissionCreationRequest request, @PathVariable Long id) {
-//        try {
-//            Role role = roleService.updatePermissionsForRole(id, request);
-//            RoleResource roleResource = roleMapper.tResource(role);
-//            ApiResource<RoleResource> response = ApiResource.ok(roleResource, "Cập nhật bản ghi thành công");
-//            return ResponseEntity.ok(response);
-//        }  catch (EntityNotFoundException e) {
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-//                    ApiResource.error("NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND)
-//            );
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-//                    ApiResource.error("INTERNAL_SERVER_ERROR", "Có lỗi xảy ra trong quá trình cập nhật", HttpStatus.INTERNAL_SERVER_ERROR
-//                    ));
-//        }
-//    }
+    @PutMapping("/permissions/{id}")
+    public ResponseEntity<?> updatePermissionsForRole(@Valid @RequestBody RolePermissionUpdationRequest request, @PathVariable Long id) {
+        try {
+            RoleResource resource = roleService.updatePermissionsForRole(id, request.getPermissionIds());
+            ApiResource<RoleResource> response = ApiResource.ok(resource, "Cập nhật bản ghi thành công");
+            return ResponseEntity.ok(response);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ApiResource.error("NOT_FOUND", e.getMessage(), HttpStatus.NOT_FOUND)
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    ApiResource.error("INTERNAL_SERVER_ERROR", "Có lỗi xảy ra trong quá trình cập nhật", HttpStatus.INTERNAL_SERVER_ERROR
+                    ));
+        }
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> findById(@PathVariable Long id) {

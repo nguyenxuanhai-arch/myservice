@@ -1,50 +1,38 @@
 package com.example.myservice.modules.users.controllers;
 
 import com.example.myservice.modules.users.entities.RefreshToken;
-import com.example.myservice.modules.users.entities.User;
 import com.example.myservice.modules.users.repositories.RefreshTokenRepository;
-import com.example.myservice.modules.users.requests.LoginRequest;
-import com.example.myservice.modules.users.requests.RegisterRequest;
-import com.example.myservice.modules.users.requests.RequestTokenRequest;
+import com.example.myservice.modules.users.requests.Auth.LoginRequest;
+import com.example.myservice.modules.users.requests.Auth.RegisterRequest;
+import com.example.myservice.modules.users.requests.Token.RequestTokenRequest;
 import com.example.myservice.modules.users.resources.LoginResource;
 import com.example.myservice.modules.users.resources.RefreshTokenResource;
 import com.example.myservice.modules.users.resources.UserResource;
-import com.example.myservice.modules.users.services.interfaces.UserServiceInterface;
+import com.example.myservice.modules.users.services.interfaces.AuthServiceInterface;
 import com.example.myservice.services.JwtService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
-import com.example.myservice.modules.users.requests.BlacklistTokenRequest;
+import com.example.myservice.modules.users.requests.Token.BlacklistTokenRequest;
 import com.example.myservice.modules.users.services.impl.BlacklistedService;
 import java.util.Optional;
-import java.util.logging.Logger;
+
 import com.example.myservice.resources.ApiResource;
 import com.example.myservice.resources.ApiResource.ErrorResource;
 
 @CrossOrigin(origins = "*")
 @Validated
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("api/v1/auth")
 public class AuthController {
-    private final UserServiceInterface userService;
-
-    @Autowired
-    private BlacklistedService blacklistedService;
-
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
-    
-    private final Logger logger = Logger.getLogger(AuthController.class.getName());
-
-    @Autowired
-    private JwtService jwtService;
-
-    public AuthController(UserServiceInterface userService) {
-        this.userService = userService;
-    }
+    private final AuthServiceInterface userService;
+    private final BlacklistedService blacklistedService;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final JwtService jwtService;
 
     @PostMapping("register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {

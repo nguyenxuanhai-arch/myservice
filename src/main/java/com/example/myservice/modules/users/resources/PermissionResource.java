@@ -1,16 +1,13 @@
 package com.example.myservice.modules.users.resources;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 @Data
 @Builder
-@RequiredArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@AllArgsConstructor
+@NoArgsConstructor
 public class PermissionResource {
-    private final Long id;
-    private final String name;
-    private final String description;
+    private Long id;
+    private String name;
+    private String description;
 }

@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class UpdateRequest {
+public class RoleUpdationRequest {
     @NotBlank(message = "Tên nhóm thành viên không được để trống")
     private String name;
 

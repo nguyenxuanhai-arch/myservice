@@ -1,4 +1,4 @@
-package com.example.myservice.modules.users.requests;
+package com.example.myservice.modules.users.requests.Token;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

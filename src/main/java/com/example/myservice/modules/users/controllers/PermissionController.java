@@ -2,8 +2,8 @@ package com.example.myservice.modules.users.controllers;
 
 import com.example.myservice.modules.users.entities.Permission;
 import com.example.myservice.modules.users.mapper.PermissionMapper;
-import com.example.myservice.modules.users.requests.PermissionCreationRequest;
-import com.example.myservice.modules.users.requests.PermissionUpdateRequest;
+import com.example.myservice.modules.users.requests.Permission.PermissionCreationRequest;
+import com.example.myservice.modules.users.requests.Permission.PermissionUpdationRequest;
 import com.example.myservice.modules.users.resources.PermissionResource;
 import com.example.myservice.modules.users.services.interfaces.PermissionServiceInterface;
 import com.example.myservice.resources.ApiResource;
@@ -12,10 +12,8 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -48,7 +46,7 @@ public class PermissionController {
      }
 
      @PutMapping("/{id}")
-     public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody PermissionUpdateRequest request) {
+     public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody PermissionUpdationRequest request) {
         try {
             Permission permission = permissionService.update(id, request);
             PermissionResource resource = permissionMapper.tResource(permission);

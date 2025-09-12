@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Data
-public class StoreRequest {
+public class RoleCreationRequest {
 
     @NotBlank(message = "Tên nhóm thành viên không được để trống")
     private String name;

@@ -1,53 +1,45 @@
 package com.example.myservice.modules.users.services.impl;
 
-import com.example.myservice.common.exception.UserAlreadyExistsException;
-import com.example.myservice.modules.users.entities.Permission;
+import com.example.myservice.helps.UserAlreadyExistsException;
 import com.example.myservice.modules.users.entities.Role;
 import com.example.myservice.modules.users.mapper.UserMapper;
 import com.example.myservice.modules.users.repositories.RoleRepository;
-import com.example.myservice.modules.users.requests.RegisterRequest;
+import com.example.myservice.modules.users.requests.Auth.RegisterRequest;
 import com.example.myservice.modules.users.resources.AuthResource;
-import com.example.myservice.modules.users.services.interfaces.UserServiceInterface;
+import com.example.myservice.modules.users.services.interfaces.AuthServiceInterface;
 import com.example.myservice.resources.ApiResource;
 import com.example.myservice.services.BaseService;
 import com.example.myservice.services.JwtService;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.example.myservice.modules.users.entities.User;
-import com.example.myservice.modules.users.requests.LoginRequest;
+import com.example.myservice.modules.users.requests.Auth.LoginRequest;
 import com.example.myservice.modules.users.resources.LoginResource;
 import com.example.myservice.modules.users.resources.UserResource;
 import com.example.myservice.modules.users.repositories.UserRepository;
 
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
-public class AuthService extends BaseService implements UserServiceInterface {
+public class AuthService extends BaseService implements AuthServiceInterface {
 
-    @Autowired
-    private JwtService jwtService;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private RoleRepository roleRepository;
-
+    private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     @Value("${jwt.defaultExpiration}")
     private long defaultExpiration;
-
-    @Autowired
     private final UserMapper userMapper;
 
     @Override
@@ -113,5 +105,42 @@ public class AuthService extends BaseService implements UserServiceInterface {
                 .id(user.getId())
                 .email(user.getEmail())
                 .build();
+    }
+
+    @Transactional // QUAN TRỌNG: update collection phải nằm trong TX
+    public UserResource updateRolesForUser(Set<Long> roleIds, Long userId) {
+        if (roleIds == null || roleIds.isEmpty()) {
+            throw new IllegalArgumentException("Danh sách role rỗng");
+        }
+
+        // load user kèm roles để thao tác trên collection managed (tránh Lazy/Detached)
+        User user = userRepository.findByIdWithRoles(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User không tồn tại"));
+
+        // lấy roles theo id, đồng thời kiểm tra thiếu
+        List<Role> roles = roleRepository.findAllById(roleIds);
+        if (roles.size() != roleIds.size()) {
+            Set<Long> found = roles.stream().map(Role::getId).collect(Collectors.toSet());
+            Set<Long> missing = new HashSet<>(roleIds); missing.removeAll(found);
+            throw new EntityNotFoundException("Role không tồn tại: " + missing);
+        }
+
+        // (tuỳ policy) chặn tự hạ quyền chính mình hoặc động tới ROLE_ADMIN
+        // if (Objects.equals(user.getId(), AuthUtils.currentUserId()) && !rolesContainAdmin(roles)) ...
+
+        // idempotent: nếu giống nhau thì return sớm, không ghi DB
+        Set<Long> current = user.getRoles().stream().map(Role::getId).collect(Collectors.toSet());
+        if (current.equals(roleIds)) {
+            return userMapper.tResource(user); // đã có roles loaded, DTO ok
+        }
+
+        // cập nhật collection (đúng cách với Hibernate)
+        user.getRoles().clear();
+        user.getRoles().addAll(roles);
+
+        // save không bắt buộc nếu entity đang managed, nhưng để chắc chắn flush FK
+        userRepository.save(user);
+
+        return userMapper.tResource(user);
     }
 }

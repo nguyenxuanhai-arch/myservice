@@ -1,10 +1,10 @@
-package com.example.myservice.modules.users.requests;
+package com.example.myservice.modules.users.requests.Permission;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class PermissionCreationRequest {
+public class PermissionUpdationRequest {
     private Long id;
     @NotBlank(message = "Tên không đươợc để trống")
     private String name;

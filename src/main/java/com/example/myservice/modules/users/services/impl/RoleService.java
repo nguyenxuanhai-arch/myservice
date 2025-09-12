@@ -5,17 +5,15 @@ import com.example.myservice.modules.users.entities.Role;
 import com.example.myservice.modules.users.mapper.RoleMapper;
 import com.example.myservice.modules.users.repositories.PermissionRepository;
 import com.example.myservice.modules.users.repositories.RoleRepository;
-import com.example.myservice.modules.users.requests.PermissionCreationRequest;
-import com.example.myservice.modules.users.requests.Role.StoreRequest;
-import com.example.myservice.modules.users.requests.Role.UpdateRequest;
-import com.example.myservice.modules.users.resources.PermissionResource;
+import com.example.myservice.modules.users.requests.Role.RoleCreationRequest;
+import com.example.myservice.modules.users.requests.Role.RoleUpdationRequest;
 import com.example.myservice.modules.users.resources.RoleResource;
 import com.example.myservice.modules.users.services.interfaces.RoleServiceInterface;
 import com.example.myservice.services.BaseService;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -23,28 +21,21 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import com.example.myservice.helps.FilterParameter;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.example.myservice.specifications.BaseSpecification;
 import org.springframework.data.jpa.domain.Specification;
 
+@RequiredArgsConstructor
 @Service
 public class RoleService extends BaseService implements RoleServiceInterface {
-
-    @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private PermissionRepository permissionRepository;
-
+    private final RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
     private static final Logger logger = LoggerFactory.getLogger(RoleService.class);
-    @Autowired
-    private RoleMapper roleMapper;
+    private final RoleMapper roleMapper;
 
 
     @Override
@@ -81,7 +72,7 @@ public class RoleService extends BaseService implements RoleServiceInterface {
 
     @Override
     @Transactional
-    public Role create(StoreRequest request) {
+    public Role create(RoleCreationRequest request) {
         try {
             Role payload = Role.builder()
                     .name(request.getName())
@@ -95,7 +86,7 @@ public class RoleService extends BaseService implements RoleServiceInterface {
 
     @Override
     @Transactional
-    public Role update(Long id, UpdateRequest request) {
+    public Role update(Long id, RoleUpdationRequest request) {
 
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Nhóm thành viên không tồn tại"));
@@ -134,6 +125,6 @@ public class RoleService extends BaseService implements RoleServiceInterface {
         role.getPermissions().addAll(found);
 
         Role saved = roleRepository.save(role);
-        return roleMapper.toRoleResource(saved);
+        return roleMapper.tResource(saved);
     }
 }
