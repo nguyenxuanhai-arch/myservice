@@ -1,11 +1,13 @@
-package com.example.myservice.security;
+package com.example.myservice.security.config;
 
-import com.example.myservice.helps.JwtAuthFilter;
+import com.example.myservice.security.JwtAuthFilter;
+import com.example.myservice.security.RestAccessDeniedHandler;
+import com.example.myservice.security.RestAuthenticationEntryPoint;
 import com.example.myservice.security.details.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -75,7 +77,8 @@ public class SecurityConfig {
                         // READ (list + detail) -> STAFF, PERMISSION_READ, ADMIN
                         .requestMatchers(
                                 "/api/v1/permissions/**",
-                                "/api/v1/roles/**"
+                                "/api/v1/roles/**",
+                                "/api/v1/users{id}/**"  // chỉ định rõ id để tránh trùng với /me
                         ).hasAnyAuthority( "ADMIN")
                         // ===== Others =====
                         .anyRequest().authenticated()
@@ -92,5 +95,35 @@ public class SecurityConfig {
          http.cors(Customizer.withDefaults());
 
         return http.build();
+    }
+
+    @Configuration
+    public static class JwtConfig {
+
+        @Value("${jwt.secret}")
+        private String secretKey;
+
+        @Value("${jwt.expiration}")
+        private long expirationTime;
+
+        @Value("${jwt.expirationRefreshToken}")
+        private long refreshTokenExpirationTime;
+
+        @Value("${jwt.issuer}")
+        private String issuer;
+
+        public String getSecretKey() {
+            return secretKey;
+        }
+
+        public long getExpirationTime() {
+            return expirationTime;
+        }
+
+        public String getIssuer() { return issuer; }
+
+        public long getRefreshTokenExpirationTime() {
+            return refreshTokenExpirationTime;
+        }
     }
 }

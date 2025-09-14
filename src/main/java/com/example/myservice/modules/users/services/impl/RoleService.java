@@ -7,6 +7,7 @@ import com.example.myservice.modules.users.repositories.PermissionRepository;
 import com.example.myservice.modules.users.repositories.RoleRepository;
 import com.example.myservice.modules.users.requests.Role.RoleCreationRequest;
 import com.example.myservice.modules.users.requests.Role.RoleUpdationRequest;
+import com.example.myservice.modules.users.resources.RoleDetailsResource;
 import com.example.myservice.modules.users.resources.RoleResource;
 import com.example.myservice.modules.users.services.interfaces.RoleServiceInterface;
 import com.example.myservice.services.BaseService;
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import com.example.myservice.helps.FilterParameter;
+import com.example.myservice.security.FilterParameter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -63,21 +64,18 @@ public class RoleService extends BaseService implements RoleServiceInterface {
     }
 
     @Override
-    public RoleResource findById(Long id) {
+    public RoleDetailsResource findById(Long id) {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Nhóm thành viên không tồn tại"));
 
-        return roleMapper.tResource(role);
+        return roleMapper.tResourceDetails(role);
     }
 
     @Override
     @Transactional
     public Role create(RoleCreationRequest request) {
         try {
-            Role payload = Role.builder()
-                    .name(request.getName())
-                    .priority((request.getPriority()))
-                    .build();
+            Role payload = roleMapper.tEntity(request);
             return roleRepository.save(payload);
         } catch (Exception e) {
             throw new RuntimeException("Transaction failed" + e.getMessage());

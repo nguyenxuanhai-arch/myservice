@@ -26,12 +26,11 @@ public class Role {
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 
-    // DB column vẫn tên publish, field là priority (được)
     @Column(name = "publish", nullable = false, columnDefinition = "TINYINT")
     private Integer priority;
 
     @Builder.Default
-    @ManyToMany(fetch = FetchType.LAZY) // đổi LAZY cho performance
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "role_permissions",
             joinColumns = @JoinColumn(name = "role_id"),
@@ -56,7 +55,6 @@ public class Role {
         updatedAt = LocalDateTime.now();
     }
 
-    // equals/hashCode chỉ dựa trên id để tránh kéo quan hệ
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

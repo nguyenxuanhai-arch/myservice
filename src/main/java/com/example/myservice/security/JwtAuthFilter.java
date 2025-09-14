@@ -1,4 +1,4 @@
-package com.example.myservice.helps;
+package com.example.myservice.security;
 
 import com.example.myservice.security.details.CustomUserDetailsService;
 import com.example.myservice.resources.ApiResource;

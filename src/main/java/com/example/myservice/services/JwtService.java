@@ -5,12 +5,12 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.Base64;
+
+import com.example.myservice.security.config.SecurityConfig;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.example.myservice.security.JwtConfig;
 import io.jsonwebtoken.security.Keys;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,17 +25,17 @@ import com.example.myservice.modules.users.repositories.RefreshTokenRepository;
 @Service
 public class JwtService {
 
-    private final JwtConfig jwtConfig;
+    private final SecurityConfig.JwtConfig jwtConfig;
     private final Key key;
     private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
-    @Autowired
-    private BlacklistedTokenRepository blacklistedTokenRepository;
-
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
-
-    public JwtService(JwtConfig jwtConfig) {
+    public JwtService(SecurityConfig.JwtConfig jwtConfig,
+                      RefreshTokenRepository refreshTokenRepository,
+                      BlacklistedTokenRepository blacklistedTokenRepository) {
+        this.blacklistedTokenRepository = blacklistedTokenRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.jwtConfig = jwtConfig;
         this.key = Keys.hmacShaKeyFor(Base64.getEncoder().encode(jwtConfig.getSecretKey().getBytes()));
     }
@@ -85,12 +85,6 @@ public class JwtService {
         return refreshToken;
     }
 
-    public String getUserIdFromJwt(String token) {
-        Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
-        Number uid = claims.get("uid", Number.class);
-        return uid == null ? null : String.valueOf(uid.longValue());
-    }
-
     public boolean isTokenFormatValid(String token) {
         try {
             String[] tokenParts = token.split("\\.");
@@ -118,8 +112,6 @@ public class JwtService {
         try {
             Date expiration = getClaimFromToken(token, Claims::getExpiration);
             return expiration.before(new Date());
-        } catch (ExpiredJwtException e) {
-            return true;
         } catch (RuntimeException e) {
             return true;
         }

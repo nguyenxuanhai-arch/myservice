@@ -1,5 +1,6 @@
 package com.example.myservice.cronjob;
 
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,11 +10,10 @@ import com.example.myservice.modules.users.repositories.BlacklistedTokenReposito
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
+@RequiredArgsConstructor
 @Service
 public class BlacklistTokenClean {
-    @Autowired
-    private BlacklistedTokenRepository blacklistedTokenRepository;
-
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
     private static final Logger logger = LoggerFactory.getLogger(BlacklistTokenClean.class);
 
     @Transactional

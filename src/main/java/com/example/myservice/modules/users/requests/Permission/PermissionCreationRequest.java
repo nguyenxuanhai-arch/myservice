@@ -1,8 +1,10 @@
 package com.example.myservice.modules.users.requests.Permission;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Builder;
 import lombok.Data;
 
+@Builder
 @Data
 public class PermissionCreationRequest {
     private Long id;

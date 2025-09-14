@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.Map;
 
 @Component
-class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
+public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private final ObjectMapper om = new ObjectMapper();
     @Override
     public void commence(HttpServletRequest req, HttpServletResponse res, org.springframework.security.core.AuthenticationException ex) throws IOException {

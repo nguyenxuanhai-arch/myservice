@@ -1,6 +1,7 @@
 package com.example.myservice.modules.users.services.impl;
 
-import com.example.myservice.helps.FilterParameter;
+import com.example.myservice.modules.users.mapper.PermissionMapper;
+import com.example.myservice.security.FilterParameter;
 import com.example.myservice.modules.users.entities.Permission;
 import com.example.myservice.modules.users.repositories.PermissionRepository;
 import com.example.myservice.modules.users.requests.Permission.PermissionCreationRequest;
@@ -22,14 +23,12 @@ import java.util.Map;
 @Service
 public class PermissionService extends BaseService implements PermissionServiceInterface {
     private final PermissionRepository permissionRepository;
+    private final PermissionMapper permissionMapper;
 
     @Override
     public Permission create(PermissionCreationRequest request) {
         try {
-            Permission payload = Permission.builder()
-                    .name(request.getName())
-                    .description(request.getDescription())
-                    .build();
+            Permission payload = permissionMapper.tEntity(request);
             return permissionRepository.save(payload);
         } catch (Exception e) {
             throw new RuntimeException("Transaction failed" + e.getMessage());

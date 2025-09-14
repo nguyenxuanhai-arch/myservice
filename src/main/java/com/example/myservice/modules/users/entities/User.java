@@ -12,21 +12,33 @@ import java.util.Set;
 @Entity
 @Getter
 @Setter
-@Builder
+@Builder(toBuilder = true)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
 
     @Column(name = "user_catalogue_id")
     private Long userCatalogueId;
 
+    @Column(name = "name")
     private String name;
+
+    @Column(name = "email", unique = true)
     private String email;
+
+    @Column(name = "password")
     private String password;
+
+    @Column(name = "phone")
     private String phone;
+
+    @Column(name = "address")
     private String address;
+
+    @Column(name = "image")
     private String image;
 
     @ManyToMany(fetch = FetchType.EAGER)

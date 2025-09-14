@@ -9,14 +9,17 @@ import com.example.myservice.modules.users.services.interfaces.PermissionService
 import com.example.myservice.resources.ApiResource;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 
+@Validated
 @Controller
 @RequestMapping("api/v1/permissions")
 public class PermissionController {
@@ -35,9 +38,9 @@ public class PermissionController {
         Page<PermissionResource> permissionResources = permissions.map(permissionMapper::tResource);
         ApiResource<Page<PermissionResource>> resource = ApiResource.ok(permissionResources, "Success");
         return ResponseEntity.ok(resource);
-     }
+    }
 
-     @PostMapping
+    @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody PermissionCreationRequest request) {
         Permission permission= permissionService.create(request);
         PermissionResource resource = permissionMapper.tResource(permission);
@@ -45,8 +48,8 @@ public class PermissionController {
         return ResponseEntity.ok(response);
      }
 
-     @PutMapping("/{id}")
-     public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody PermissionUpdationRequest request) {
+    @PutMapping("/{id}")
+     public ResponseEntity<?> update(@PathVariable @Positive(message = "id phải lớn hơn 0") Long id, @Valid @RequestBody PermissionUpdationRequest request) {
         try {
             Permission permission = permissionService.update(id, request);
             PermissionResource resource = permissionMapper.tResource(permission);
@@ -63,8 +66,8 @@ public class PermissionController {
         }
      }
 
-     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable @Positive(message = "id phải lớn hơn 0") Long id) {
         try {
             permissionService.delete(id);
             return ResponseEntity.status(HttpStatus.OK).body(
@@ -83,5 +86,5 @@ public class PermissionController {
                     ApiResource.error("INTERNAL_SERVER_ERROR", "Có lỗi xảy ra trong quá trình cập nhật", HttpStatus.INTERNAL_SERVER_ERROR)
             );
         }
-     }
+    }
 }

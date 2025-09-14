@@ -1,6 +1,6 @@
 package com.example.myservice.modules.users.services.impl;
 
-import com.example.myservice.helps.UserAlreadyExistsException;
+import com.example.myservice.security.UserAlreadyExistsException;
 import com.example.myservice.modules.users.entities.Role;
 import com.example.myservice.modules.users.mapper.UserMapper;
 import com.example.myservice.modules.users.repositories.RoleRepository;
@@ -53,16 +53,8 @@ public class AuthService extends BaseService implements AuthServiceInterface {
                 throw new BadCredentialsException("Email hoac mat khau khong dung");
             }
 
-            Set<String> roleName = user.getRoles().stream()
-                    .map(Role::getName)
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
-
             AuthResource userResource = AuthResource.builder()
                     .id(user.getId())
-                    .email(user.getEmail())
-                    .name(user.getName())
-                    .phone(user.getPhone())
-                    .roles(roleName)
                     .build();
 
             String token = jwtService.generateToken(user.getId(), user.getEmail(), defaultExpiration);

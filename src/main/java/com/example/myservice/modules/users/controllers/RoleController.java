@@ -5,12 +5,14 @@ import com.example.myservice.modules.users.mapper.RoleMapper;
 import com.example.myservice.modules.users.requests.Role.RoleCreationRequest;
 import com.example.myservice.modules.users.requests.Role.RoleUpdationRequest;
 import com.example.myservice.modules.users.requests.Role.RolePermissionUpdationRequest;
+import com.example.myservice.modules.users.resources.RoleDetailsResource;
 import com.example.myservice.modules.users.resources.RoleResource;
 import com.example.myservice.modules.users.services.interfaces.RoleServiceInterface;
 import com.example.myservice.resources.ApiResource;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +22,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Map;
 
 @Validated
@@ -37,9 +38,9 @@ public class RoleController {
     public ResponseEntity<?> index(HttpServletRequest request)
     {
         Map<String, String[]> parameters = request.getParameterMap();
-        Page<Role> userCatalogues = roleService.paginate(parameters);
+        Page<Role> roles = roleService.paginate(parameters);
 
-        Page<RoleResource> roleResources = userCatalogues.map(roleMapper::tResource
+        Page<RoleResource> roleResources = roles.map(roleMapper::tResource
         );
         ApiResource<Page<RoleResource>> response = ApiResource.ok(roleResources,
                 " SUCCESS");
@@ -49,15 +50,15 @@ public class RoleController {
     @PostMapping
     public ResponseEntity<?> store(@Valid @RequestBody RoleCreationRequest request) {
         Role role = roleService.create(request);
-        RoleResource roleResource = roleMapper.tResource(role);
+        RoleDetailsResource roleResource = roleMapper.tResourceDetails(role);
 
-        ApiResource<RoleResource> response = ApiResource.ok(roleResource, "Thêm bản ghi thành công");
+        ApiResource<RoleDetailsResource> response = ApiResource.ok(roleResource, "Thêm bản ghi thành công");
         logger.info("Method store running...");
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@Valid @RequestBody RoleUpdationRequest request, @PathVariable Long id) {
+    public ResponseEntity<?> update(@Valid @RequestBody RoleUpdationRequest request, @PathVariable @Positive(message = "id phải lớn hơn 0") Long id) {
 
         try {
             Role role = roleService.update(id, request);
@@ -76,7 +77,7 @@ public class RoleController {
     }
 
     @PutMapping("/permissions/{id}")
-    public ResponseEntity<?> updatePermissionsForRole(@Valid @RequestBody RolePermissionUpdationRequest request, @PathVariable Long id) {
+    public ResponseEntity<?> updatePermissionsForRole(@Valid @RequestBody RolePermissionUpdationRequest request, @PathVariable @Positive(message = "id phải lớn hơn 0") Long id) {
         try {
             RoleResource resource = roleService.updatePermissionsForRole(id, request.getPermissionIds());
             ApiResource<RoleResource> response = ApiResource.ok(resource, "Cập nhật bản ghi thành công");
@@ -93,14 +94,14 @@ public class RoleController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> findById(@PathVariable Long id) {
-        RoleResource data = roleService.findById(id);
-        ApiResource<RoleResource> response = ApiResource.ok(data, "Success");
+    public ResponseEntity<?> findById(@PathVariable @Positive(message = "id phải lớn hơn 0") Long id) {
+        RoleDetailsResource data = roleService.findById(id);
+        ApiResource<RoleDetailsResource> response = ApiResource.ok(data, "Success");
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public  ResponseEntity<?> delete(@PathVariable Long id) {
+    public  ResponseEntity<?> delete(@PathVariable @Positive(message = "id phải lớn hơn 0") Long id) {
         try {
             roleService.delete(id);
             return ResponseEntity.status(HttpStatus.OK).body(
