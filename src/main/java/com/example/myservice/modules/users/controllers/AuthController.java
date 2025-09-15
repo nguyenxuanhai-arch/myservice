@@ -5,9 +5,7 @@ import com.example.myservice.modules.users.repositories.RefreshTokenRepository;
 import com.example.myservice.modules.users.requests.Auth.LoginRequest;
 import com.example.myservice.modules.users.requests.Auth.RegisterRequest;
 import com.example.myservice.modules.users.requests.Token.RequestTokenRequest;
-import com.example.myservice.modules.users.resources.LoginResource;
-import com.example.myservice.modules.users.resources.RefreshTokenResource;
-import com.example.myservice.modules.users.resources.UserResource;
+import com.example.myservice.modules.users.resources.*;
 import com.example.myservice.modules.users.services.interfaces.AuthServiceInterface;
 import com.example.myservice.services.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -37,13 +35,9 @@ public class AuthController {
     @PostMapping("register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
         Object result = userService.createUser(registerRequest);
-        if (result instanceof UserResource userResource) {
-            ApiResource<UserResource> response = ApiResource.ok(userResource, "Đăng kí thành công");
+        if (result instanceof RegisterResource resource) {
+            ApiResource<RegisterResource> response = ApiResource.ok(resource, "Đăng kí thành công");
             return ResponseEntity.ok(response);
-        }
-
-        if (result instanceof ApiResource errorResource) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResource);
         }
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResource("Network Error"));
@@ -70,11 +64,9 @@ public class AuthController {
             Object result = blacklistedService.create(request);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            ApiResource<Void> errorResponse = ApiResource.<Void>builder()
-                    .success(false)
-                    .message("NetworkError")
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
+            ApiResource<Void> errorResponse = ApiResource.error("500",
+                    "Network Error",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
             return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
@@ -87,21 +79,15 @@ public class AuthController {
             request.setToken(token);
             blacklistedService.create(request);
 
-            ApiResource<Void> response = ApiResource.<Void>builder()
-                    .success(true)
-                    .message("Đăng xuất thành công")
-                    .status(HttpStatus.OK)
-                    .build();
+            ApiResource<Void> response = ApiResource.ok(null, "Đăng xuất thành công");
 
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
 
-            ApiResource<Void> errorResponse = ApiResource.<Void>builder()
-                    .success(false)
-                    .message("Network Error")
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
+            ApiResource<Void> errorResponse = ApiResource.error("500",
+                    "Network Error",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
             return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
@@ -110,11 +96,9 @@ public class AuthController {
     public ResponseEntity<?> refresh(@Valid @RequestBody RequestTokenRequest request) {
         String refreshToken = request.getRefreshToken();
         if (!jwtService.isRefreshTokenValid(refreshToken)) {
-            ApiResource<Void> errorResponse = ApiResource.<Void>builder()
-                    .success(false)
-                    .message("Refresh Token không hợp lệ")
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
+            ApiResource<Void> errorResponse = ApiResource.error("500",
+                    "Refresh token không hợp lệ",
+                    HttpStatus.BAD_REQUEST);
             return ResponseEntity.internalServerError().body(errorResponse);
 
         }
@@ -131,11 +115,9 @@ public class AuthController {
             return ResponseEntity.ok(new RefreshTokenResource(newToken, newRefreshToken));
         }
 
-        ApiResource<Void> errorResponse = ApiResource.<Void>builder()
-                .success(false)
-                .message("Network Error")
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .build();
+        ApiResource<Void> errorResponse = ApiResource.error("500",
+                "INTERNAL_SERVER_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR);
         return ResponseEntity.internalServerError().body(errorResponse);
     }
 }

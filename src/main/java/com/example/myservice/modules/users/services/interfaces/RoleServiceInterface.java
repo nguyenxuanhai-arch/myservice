@@ -6,10 +6,13 @@ import com.example.myservice.modules.users.requests.Role.RoleUpdationRequest;
 import com.example.myservice.modules.users.resources.RoleDetailsResource;
 import com.example.myservice.modules.users.resources.RoleResource;
 import org.springframework.data.domain.Page;
+
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public interface RoleServiceInterface {
+    List<Role> getAll(Map<String, String[]> parameters);
     Role create(RoleCreationRequest request);
     Role update(Long id, RoleUpdationRequest request);
     Page<Role> paginate(Map<String, String[]> parameters);

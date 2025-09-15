@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 import java.util.Map;
 
 @Validated
@@ -34,14 +35,23 @@ public class RoleController {
     private final RoleServiceInterface roleService;
     private final RoleMapper roleMapper;
 
+    @GetMapping("/list")
+    public ResponseEntity<?> list(HttpServletRequest request) {
+        Map<String, String[]> parameterMap = request.getParameterMap();
+        List<Role> roles = roleService.getAll(parameterMap);
+        List<RoleResource> roleResources = roleMapper.tResourceList(roles);
+
+        ApiResource<List<RoleResource>> response = ApiResource.ok(roleResources, " SUCCESS");
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping
     public ResponseEntity<?> index(HttpServletRequest request)
     {
         Map<String, String[]> parameters = request.getParameterMap();
         Page<Role> roles = roleService.paginate(parameters);
 
-        Page<RoleResource> roleResources = roles.map(roleMapper::tResource
-        );
+        Page<RoleResource> roleResources = roleMapper.tResourcePage(roles);
         ApiResource<Page<RoleResource>> response = ApiResource.ok(roleResources,
                 " SUCCESS");
         return ResponseEntity.ok(response);
@@ -50,9 +60,9 @@ public class RoleController {
     @PostMapping
     public ResponseEntity<?> store(@Valid @RequestBody RoleCreationRequest request) {
         Role role = roleService.create(request);
-        RoleDetailsResource roleResource = roleMapper.tResourceDetails(role);
+        RoleResource roleResource = roleMapper.tResource(role);
 
-        ApiResource<RoleDetailsResource> response = ApiResource.ok(roleResource, "Thêm bản ghi thành công");
+        ApiResource<RoleResource> response = ApiResource.ok(roleResource, "Thêm bản ghi thành công");
         logger.info("Method store running...");
         return ResponseEntity.ok(response);
     }
@@ -63,6 +73,7 @@ public class RoleController {
         try {
             Role role = roleService.update(id, request);
             RoleResource roleResource = roleMapper.tResource(role);
+
             ApiResource<RoleResource> response = ApiResource.ok(roleResource, "Cập nhật bản ghi thành công");
             return ResponseEntity.ok(response);
         } catch (EntityNotFoundException e) {

@@ -13,21 +13,16 @@ import com.example.myservice.modules.users.services.interfaces.RoleServiceInterf
 import com.example.myservice.services.BaseService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import com.example.myservice.security.FilterParameter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.example.myservice.specifications.BaseSpecification;
 import org.springframework.data.jpa.domain.Specification;
 
 @RequiredArgsConstructor
@@ -35,30 +30,21 @@ import org.springframework.data.jpa.domain.Specification;
 public class RoleService extends BaseService implements RoleServiceInterface {
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
-    private static final Logger logger = LoggerFactory.getLogger(RoleService.class);
     private final RoleMapper roleMapper;
 
+    @Override
+    public List<Role> getAll(Map<String, String[]> parameters) {
+        Sort sort = sortParam(parameters);
+        Specification<Role> specification = specificationParam(parameters);
+        return roleRepository.findAll(specification ,sort);
+    }
 
     @Override
     public Page<Role> paginate(Map<String, String[]> parameters) {
         int page = parameters.containsKey("page") ? Integer.parseInt(parameters.get("page")[0]) : 1;
         int perPage = parameters.containsKey("perPage") ? Integer.parseInt(parameters.get("perPage")[0]) : 20;
-        String sortParam = parameters.containsKey("sort") ? parameters.get("sort")[0] : null;
-        Sort sort = createSort(sortParam);
-
-        String keyword = FilterParameter.filtertKeyword(parameters);
-        Map<String, String> filterSimple = FilterParameter.filterSimple(parameters);
-        Map<String, Map<String, String>> filterComplex = FilterParameter.filterComplex(parameters);
-
-        logger.info("keyword" + keyword);
-        logger.info("filterSimple: {}",filterSimple);
-        logger.info("filterComple: {}" , filterComplex);
-
-       Specification<Role> specification = Specification.where(
-            BaseSpecification.<Role>keyword(keyword, "name"))
-               .and(BaseSpecification.<Role>whereSpec(filterSimple)
-                       .and(BaseSpecification.<Role>complexWhereSpec(filterComplex)));
-
+        Sort sort = sortParam(parameters);
+        Specification<Role> specification = specificationParam(parameters);
         Pageable pageable = PageRequest.of(page - 1, perPage, sort);
         return roleRepository.findAll(specification ,pageable);
     }
@@ -87,14 +73,8 @@ public class RoleService extends BaseService implements RoleServiceInterface {
     public Role update(Long id, RoleUpdationRequest request) {
 
         Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Nhóm thành viên không tồn tại"));
-
-        Role payload = role.toBuilder()
-                .name(request.getName())
-                .priority(request.getPriority())
-                .build();
-
-        return roleRepository.save(payload);
+                .orElseThrow(() -> new EntityNotFoundException("Nhóm thành viên không tồn tại với id: " + id));
+        return roleRepository.save(role);
     }
 
     @Override

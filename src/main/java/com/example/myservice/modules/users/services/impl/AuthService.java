@@ -1,11 +1,11 @@
 package com.example.myservice.modules.users.services.impl;
 
+import com.example.myservice.modules.users.resources.*;
 import com.example.myservice.security.UserAlreadyExistsException;
 import com.example.myservice.modules.users.entities.Role;
 import com.example.myservice.modules.users.mapper.UserMapper;
 import com.example.myservice.modules.users.repositories.RoleRepository;
 import com.example.myservice.modules.users.requests.Auth.RegisterRequest;
-import com.example.myservice.modules.users.resources.AuthResource;
 import com.example.myservice.modules.users.services.interfaces.AuthServiceInterface;
 import com.example.myservice.resources.ApiResource;
 import com.example.myservice.services.BaseService;
@@ -20,12 +20,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.example.myservice.modules.users.entities.User;
 import com.example.myservice.modules.users.requests.Auth.LoginRequest;
-import com.example.myservice.modules.users.resources.LoginResource;
-import com.example.myservice.modules.users.resources.UserResource;
 import com.example.myservice.modules.users.repositories.UserRepository;
 
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -53,9 +50,7 @@ public class AuthService extends BaseService implements AuthServiceInterface {
                 throw new BadCredentialsException("Email hoac mat khau khong dung");
             }
 
-            AuthResource userResource = AuthResource.builder()
-                    .id(user.getId())
-                    .build();
+            AuthResource userResource = userMapper.tAuthResource(user);
 
             String token = jwtService.generateToken(user.getId(), user.getEmail(), defaultExpiration);
             String refreshToken = jwtService.generateRefreshToken(user.getId(), user.getEmail());
@@ -68,48 +63,38 @@ public class AuthService extends BaseService implements AuthServiceInterface {
     }
 
     @Override
-    public UserResource getUserFromEmail(String email) {
-        User user = userRepository.findByEmailWithRolesAndPermissions(email).orElseThrow(() -> new RuntimeException("User not found"));
+    public UserDetailsResource getUserFromEmail(String email) {
+        User user = userRepository.findByEmailWithRolesAndPermissions(email).orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
-        return userMapper.tResource(user);
+        return userMapper.tResourceDetails(user);
     }
 
     @Override
-    public UserResource createUser( RegisterRequest request) {
-        // 1) Validate
+    public RegisterResource createUser(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new UserAlreadyExistsException("Email đã tồn tại");
         }
 
-        // 2) Lấy role mặc định
-        Role roleUser = roleRepository.findByName("USER")
-                .orElseThrow(() -> new IllegalStateException("USER chưa được seed"));
+        Role role = roleRepository.findByName("USER")
+                .orElseThrow(() -> new IllegalStateException("Role USER không tồn tại trong hệ thống"));
 
-        // 3) Tạo user
-        User user = User.builder()
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .roles(Set.of(roleUser))
-                .build();
+        User user = userMapper.tEntity(request);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRoles(Set.of(role));
 
-        user = userRepository.save(user);
-        return UserResource.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .build();
+        userRepository.save(user);
+        return userMapper.tRegisterResource(user);
     }
 
-    @Transactional // QUAN TRỌNG: update collection phải nằm trong TX
-    public UserResource updateRolesForUser(Set<Long> roleIds, Long userId) {
+    @Transactional
+    public UserDetailsResource updateRolesForUser(Set<Long> roleIds, Long userId) {
         if (roleIds == null || roleIds.isEmpty()) {
             throw new IllegalArgumentException("Danh sách role rỗng");
         }
 
-        // load user kèm roles để thao tác trên collection managed (tránh Lazy/Detached)
         User user = userRepository.findByIdWithRoles(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User không tồn tại"));
 
-        // lấy roles theo id, đồng thời kiểm tra thiếu
         List<Role> roles = roleRepository.findAllById(roleIds);
         if (roles.size() != roleIds.size()) {
             Set<Long> found = roles.stream().map(Role::getId).collect(Collectors.toSet());
@@ -117,22 +102,18 @@ public class AuthService extends BaseService implements AuthServiceInterface {
             throw new EntityNotFoundException("Role không tồn tại: " + missing);
         }
 
-        // (tuỳ policy) chặn tự hạ quyền chính mình hoặc động tới ROLE_ADMIN
-        // if (Objects.equals(user.getId(), AuthUtils.currentUserId()) && !rolesContainAdmin(roles)) ...
-
-        // idempotent: nếu giống nhau thì return sớm, không ghi DB
-        Set<Long> current = user.getRoles().stream().map(Role::getId).collect(Collectors.toSet());
+        Set<Long> current = user.getRoles().stream()
+                .map(Role::getId)
+                .collect(Collectors.toSet());
         if (current.equals(roleIds)) {
-            return userMapper.tResource(user); // đã có roles loaded, DTO ok
+            return userMapper.tResourceDetails(user);
         }
 
-        // cập nhật collection (đúng cách với Hibernate)
         user.getRoles().clear();
         user.getRoles().addAll(roles);
 
-        // save không bắt buộc nếu entity đang managed, nhưng để chắc chắn flush FK
         userRepository.save(user);
 
-        return userMapper.tResource(user);
+        return userMapper.tResourceDetails(user);
     }
 }

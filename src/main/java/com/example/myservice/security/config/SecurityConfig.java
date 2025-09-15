@@ -4,6 +4,7 @@ import com.example.myservice.security.JwtAuthFilter;
 import com.example.myservice.security.RestAccessDeniedHandler;
 import com.example.myservice.security.RestAuthenticationEntryPoint;
 import com.example.myservice.security.details.CustomUserDetailsService;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -35,6 +36,7 @@ public class SecurityConfig {
 
     private static final String[] AUTH_WHITELIST = {
             "/api/v1/auth/login",
+            "/error",  // Spring Boot mặc định
             "/api/v1/auth/refresh",
             "/api/v1/auth/register",
             // swagger (tuỳ dự án)
@@ -97,6 +99,7 @@ public class SecurityConfig {
         return http.build();
     }
 
+    @Getter
     @Configuration
     public static class JwtConfig {
 
@@ -112,18 +115,5 @@ public class SecurityConfig {
         @Value("${jwt.issuer}")
         private String issuer;
 
-        public String getSecretKey() {
-            return secretKey;
-        }
-
-        public long getExpirationTime() {
-            return expirationTime;
-        }
-
-        public String getIssuer() { return issuer; }
-
-        public long getRefreshTokenExpirationTime() {
-            return refreshTokenExpirationTime;
-        }
     }
 }

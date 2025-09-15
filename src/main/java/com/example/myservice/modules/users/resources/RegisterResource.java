@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserResource {
+public class RegisterResource {
     private Long id;
     private String email;
-    private String name;
 }

@@ -23,7 +23,6 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
     public void handle(HttpServletRequest req, HttpServletResponse res, AccessDeniedException ex) throws IOException {
         var body = ApiResource.error("403", "Truy cập bị từ chối" , HttpStatus.FORBIDDEN);
 
-
         res.setStatus(HttpServletResponse.SC_FORBIDDEN);
         res.setContentType(MediaType.APPLICATION_JSON_VALUE);
         om.writeValue(res.getOutputStream(), body);

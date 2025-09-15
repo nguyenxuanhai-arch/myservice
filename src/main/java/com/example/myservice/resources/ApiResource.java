@@ -113,4 +113,21 @@ public class ApiResource<T> {
                 .status(status)
                 .build();
     }
+
+    public static <T> ApiResource<T> errors(Map<String, String> errors, String message, HttpStatus status) {
+        return ApiResource.<T>builder()
+                .success(false)
+                .message(message)
+                .errors(errors)
+                .status(status)
+                .build();
+    }
+
+    public static <T> ApiResource<T> errorDetail(String code, String message, String detail, HttpStatus status) {
+        return ApiResource.<T>builder()
+                .success(false)
+                .error(new ErrorResource(code, message, detail))
+                .status(status)
+                .build();
+    }
 }
